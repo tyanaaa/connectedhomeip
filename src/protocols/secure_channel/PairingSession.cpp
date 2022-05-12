@@ -28,6 +28,7 @@ CHIP_ERROR PairingSession::AllocateSecureSession(SessionManager & sessionManager
     auto handle = sessionManager.AllocateSession(GetSecureSessionType());
     VerifyOrReturnError(handle.HasValue(), CHIP_ERROR_NO_MEMORY);
     mSecureSessionHolder.GrabPairing(handle.Value());
+    mSecureSessionRef = handle;
     mSessionManager = &sessionManager;
     return CHIP_NO_ERROR;
 }
@@ -152,7 +153,9 @@ void PairingSession::Clear()
         mExchangeCtxt = nullptr;
     }
 
+    mUnauthenticatedSessionRef.ClearValue();
     mSecureSessionHolder.Release();
+    mSecureSessionRef.ClearValue();
     mPeerSessionId.ClearValue();
     mSessionManager = nullptr;
 }

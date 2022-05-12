@@ -44,24 +44,24 @@ public:
 
     bool Contains(const SessionHandle & session) const
     {
-        return mSession.HasValue() && &mSession.Value().Get() == &session.mSession.Get();
+        return mSession != nullptr && mSession == &session.mSession.Get();
     }
 
     void GrabPairing(const SessionHandle & session); // Should be only used inside CASE/PASE pairing.
     void Grab(const SessionHandle & session);
     void Release();
 
-    operator bool() const { return mSession.HasValue(); }
-    SessionHandle Get() const { return SessionHandle{ mSession.Value().Get() }; }
+    explicit operator bool() const { return mSession != nullptr; }
+    SessionHandle Get() const { return SessionHandle(*mSession); }
     Optional<SessionHandle> ToOptional() const
     {
-        return mSession.HasValue() ? chip::MakeOptional<SessionHandle>(Get()) : chip::Optional<SessionHandle>::Missing();
+        return mSession != nullptr ? chip::MakeOptional<SessionHandle>(Get()) : chip::Optional<SessionHandle>::Missing();
     }
 
-    Transport::Session * operator->() const { return &mSession.Value().Get(); }
+    Transport::Session * operator->() const { return mSession; }
 
 private:
-    Optional<ReferenceCountedHandle<Transport::Session>> mSession;
+    Transport::Session * mSession = nullptr;
 };
 
 // @brief Extends SessionHolder to allow propagate OnSessionReleased event to an extra given destination

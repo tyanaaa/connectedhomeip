@@ -29,18 +29,18 @@ SessionHolder::~SessionHolder()
 SessionHolder::SessionHolder(const SessionHolder & that) : IntrusiveListNodeBase()
 {
     mSession = that.mSession;
-    if (mSession.HasValue())
+    if (mSession != nullptr)
     {
-        mSession.Value()->AddHolder(*this);
+        mSession->AddHolder(*this);
     }
 }
 
 SessionHolder::SessionHolder(SessionHolder && that) : IntrusiveListNodeBase()
 {
     mSession = that.mSession;
-    if (mSession.HasValue())
+    if (mSession != nullptr)
     {
-        mSession.Value()->AddHolder(*this);
+        mSession->AddHolder(*this);
     }
 
     that.Release();
@@ -51,9 +51,9 @@ SessionHolder & SessionHolder::operator=(const SessionHolder & that)
     Release();
 
     mSession = that.mSession;
-    if (mSession.HasValue())
+    if (mSession != nullptr)
     {
-        mSession.Value()->AddHolder(*this);
+        mSession->AddHolder(*this);
     }
 
     return *this;
@@ -64,9 +64,9 @@ SessionHolder & SessionHolder::operator=(SessionHolder && that)
     Release();
 
     mSession = that.mSession;
-    if (mSession.HasValue())
+    if (mSession != nullptr)
     {
-        mSession.Value()->AddHolder(*this);
+        mSession->AddHolder(*this);
     }
 
     that.Release();
@@ -79,7 +79,7 @@ void SessionHolder::GrabPairing(const SessionHandle & session)
     Release();
     if (session->IsSecureSession() && session->AsSecureSession()->IsPairing())
     {
-        mSession.Emplace(session.mSession);
+        mSession = &session.mSession.Get();
         session->AddHolder(*this);
     }
 }
@@ -89,17 +89,17 @@ void SessionHolder::Grab(const SessionHandle & session)
     Release();
     if (session->IsActiveSession())
     {
-        mSession.Emplace(session.mSession);
+        mSession = &session.mSession.Get();
         session->AddHolder(*this);
     }
 }
 
 void SessionHolder::Release()
 {
-    if (mSession.HasValue())
+    if (mSession != nullptr)
     {
-        mSession.Value()->RemoveHolder(*this);
-        mSession.ClearValue();
+        mSession->RemoveHolder(*this);
+        mSession = nullptr;
     }
 }
 

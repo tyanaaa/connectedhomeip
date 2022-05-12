@@ -89,6 +89,11 @@ public:
                                           TLV::TLVWriter & tlvWriter);
 
 protected:
+    void GrabUnauthenticatedSession(const SessionHandle & session)
+    {
+        mUnauthenticatedSessionRef.SetValue(session);
+    }
+
     /**
      * Allocate a secure session object from the passed session manager for the
      * pending session establishment operation.
@@ -174,6 +179,8 @@ protected:
 
 protected:
     CryptoContext::SessionRole mRole;
+    Optional<SessionHandle> mUnauthenticatedSessionRef; // Hold the unauthenticated session to prevent it from releasing
+    Optional<SessionHandle> mSecureSessionRef; // Hold the secure session to prevent it from releasing
     SessionHolderWithDelegate mSecureSessionHolder;
     // mSessionManager is set if we actually allocate a secure session, so we
     // can clean it up later as needed.

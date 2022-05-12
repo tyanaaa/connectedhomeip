@@ -40,7 +40,7 @@ public:
     SessionHandle(Transport::Session & session) : mSession(session) {}
     ~SessionHandle() {}
 
-    SessionHandle(const SessionHandle &) = delete;
+    SessionHandle(const SessionHandle &) = default;
     SessionHandle operator=(const SessionHandle &) = delete;
     SessionHandle(SessionHandle &&)                = default;
     SessionHandle & operator=(SessionHandle &&) = delete;
