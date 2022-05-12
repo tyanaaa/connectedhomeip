@@ -29,7 +29,7 @@ CHIP_ERROR PairingSession::AllocateSecureSession(SessionManager & sessionManager
     VerifyOrReturnError(handle.HasValue(), CHIP_ERROR_NO_MEMORY);
     mSecureSessionHolder.GrabPairing(handle.Value());
     mSecureSessionRef = handle;
-    mSessionManager = &sessionManager;
+    mSessionManager   = &sessionManager;
     return CHIP_NO_ERROR;
 }
 

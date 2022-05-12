@@ -42,10 +42,7 @@ public:
     // Implement SessionDelegate
     void OnSessionReleased() override { Release(); }
 
-    bool Contains(const SessionHandle & session) const
-    {
-        return mSession != nullptr && mSession == &session.mSession.Get();
-    }
+    bool Contains(const SessionHandle & session) const { return mSession != nullptr && mSession == &session.mSession.Get(); }
 
     void GrabPairing(const SessionHandle & session); // Should be only used inside CASE/PASE pairing.
     void Grab(const SessionHandle & session);
