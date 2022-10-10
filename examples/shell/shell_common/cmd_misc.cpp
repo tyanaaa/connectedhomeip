@@ -62,11 +62,20 @@ CHIP_ERROR cmd_rand(int argc, char ** argv)
 
 CHIP_ERROR cmd_610_cli(int argc, char ** argv)
 {
+	static Shell::Engine sSubShell;
+
 	for (int i = 0; i < argc; i++)
 	{
 		streamer_printf(streamer_get(), "%s ", argv[i]);
 	}
 	streamer_printf(streamer_get(), "\n\r");
+
+	CHIP_ERROR error = sSubShell.ExecCommand(argc, argv);
+
+	if (error != CHIP_NO_ERROR)
+	{
+		streamer_printf(streamer_get(), "Error: %" CHIP_ERROR_FORMAT "\r\n", error.Format());
+	}
 	return CHIP_NO_ERROR;
 }
 

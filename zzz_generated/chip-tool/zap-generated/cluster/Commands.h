@@ -988,21 +988,6 @@ public:
 	{
 		ChipLogProgress(chipTool, "Sending cluster (0x00000006) command (0x00000043) on endpoint %u", endpointIds.at(0));
 		ChipLogDetail(DataManagement,"Debug sending OnAudio Command on 610");
-		/**
-		int argc = 1;
-		char* argv = "gst-launch-1.0 filesrc location=/data/matter.mp3 ! mpegaudioparse ! mpg123audiodec ! pulsesink volume=0.5";
-		
-		//CHIP_ERROR error = Engine::Root().ExecCommand(argc, argv);
-
-		CHIP_ERROR error = sSubShell.ExecCommand(argc, argv);
-
-		if (error != CHIP_NO_ERROR)
-		{
-			streamer_printf(streamer_get(), "Error: %" CHIP_ERROR_FORMAT "\r\n", error.Format());
-			ChipLogDetail(DataManagement, "Running error on 610");
-			return error;
-		}
-		*/
 		return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000006, 0x00000043, mRequest);
 	}
 
