@@ -131,6 +131,10 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, uint8_t comm
         return EMBER_ZCL_STATUS_SUCCESS;
     }
 
+	if (command == Commands::OnAudio::Id) {
+		emberAfOnOffClusterPrintln("OnAudio command set");
+	}
+
     // we either got a toggle, or an on when off, or an off when on,
     // so we need to swap the value
     newValue = !currentValue;
