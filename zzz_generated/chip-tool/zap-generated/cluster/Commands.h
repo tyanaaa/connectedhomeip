@@ -29,6 +29,7 @@
 #include <commands/clusters/ReportCommand.h>
 #include <commands/clusters/SubscriptionsCommands.h>
 #include <commands/clusters/WriteAttributeCommand.h>
+#include <lib/shell/Engine.h>
 
 /*----------------------------------------------------------------------------*\
 | Cluster Name                                                        |   ID   |
@@ -986,13 +987,14 @@ public:
 	CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
 	{
 		ChipLogProgress(chipTool, "Sending cluster (0x00000006) command (0x00000043) on endpoint %u", endpointIds.at(0));
-		ChipLogDetail(DataManagement,"Debug sending OnAudio Command on 610");
-		string argc = "gst-launch-1.0 filesrc location=/data/matter.mp3 ! mpegaudioparse ! mpg123audiodec ! pulsesink volume=0.5";
-		//static Shell::Engine sSubShell;
+		ChipLogDetail(DataManagement,"Debug sending OnAudio Command on 610");'
+		/**
+		int argc = 1;
+		char* argv = "gst-launch-1.0 filesrc location=/data/matter.mp3 ! mpegaudioparse ! mpg123audiodec ! pulsesink volume=0.5";
+		
+		//CHIP_ERROR error = Engine::Root().ExecCommand(argc, argv);
 
-		CHIP_ERROR error = Engine::Root().ExecCommand(argc, argv);
-
-		//CHIP_ERROR error = sSubShell.ExecCommand(argc, argv);
+		CHIP_ERROR error = sSubShell.ExecCommand(argc, argv);
 
 		if (error != CHIP_NO_ERROR)
 		{
@@ -1000,7 +1002,7 @@ public:
 			ChipLogDetail(DataManagement, "Running error on 610");
 			return error;
 		}
-
+		*/
 		return ClusterCommand::SendCommand(device, endpointIds.at(0), 0x00000006, 0x00000043, mRequest);
 	}
 
@@ -1010,10 +1012,10 @@ public:
 
 		return ClusterCommand::SendGroupCommand(groupId, fabricIndex, 0x00000006, 0x00000043, mRequest);
 	}
-
 	
 private:
 	chip::app::Clusters::OnOff::Commands::OnAudio::Type mRequest;
+
 };
 
 /*

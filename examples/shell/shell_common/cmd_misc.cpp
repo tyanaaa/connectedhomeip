@@ -62,7 +62,11 @@ CHIP_ERROR cmd_rand(int argc, char ** argv)
 
 CHIP_ERROR cmd_610_cli(int argc, char ** argv)
 {
-	streamer_printf(streamer_get(), "%s ", argv[i]);
+	for (int i = 0; i < argc; i++)
+	{
+		streamer_printf(streamer_get(), "%s ", argv[i]);
+	}
+	streamer_printf(streamer_get(), "\n\r");
 	return CHIP_NO_ERROR;
 }
 
