@@ -2769,8 +2769,8 @@ struct DecodableType;
 } // namespace On
 
 namespace OnAudio {
-	struct Type;
-	struct DecodableType;
+struct Type;
+struct DecodableType;
 } // namespace OnAudio
 
 namespace Toggle {
