@@ -60,10 +60,17 @@ CHIP_ERROR cmd_rand(int argc, char ** argv)
     return CHIP_NO_ERROR;
 }
 
+CHIP_ERROR cmd_610_cli(int argc, char ** argv)
+{
+	streamer_printf(streamer_get(), "%s ", argv[i]);
+	return CHIP_NO_ERROR;
+}
+
 static shell_command_t cmds_misc[] = {
     { &cmd_echo, "echo", "Echo back provided inputs" },
     { &cmd_log, "log", "Logging utilities" },
     { &cmd_rand, "rand", "Random number utilities" },
+	{ &cmd_610_cli, "test_610_cli", "test_610_cli" },
 };
 
 void cmd_misc_init()
