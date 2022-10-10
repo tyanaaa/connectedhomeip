@@ -47,6 +47,7 @@
 #include <app/util/af.h>
 #include <app/util/util.h>
 #include <lib/shell/Engine.h>
+#include <ChipShellCollection.h>
 
 #ifdef EMBER_AF_PLUGIN_SCENES
 #include <app/clusters/scenes/scenes.h>
@@ -135,16 +136,15 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, uint8_t comm
 
 	if (command == Commands::OnAudio::Id) {
 		emberAfOnOffClusterPrintln("OnAudio command set");
-		char* argv = "gst-launch-1.0 filesrc location=/data/matter.mp3 ! mpegaudioparse ! mpg123audiodec ! pulsesink volume=0.5";
+		char argv[] = "gst-launch-1.0 filesrc location=/data/matter.mp3 ! mpegaudioparse ! mpg123audiodec ! pulsesink volume=0.5";
+		char* argv2 = argv;
 		int argc = 1;
-		//cmd_610_cli(1, argv);
-		CHIP_ERROR error = sSubShell.ExecCommand(argc, argv);
+		CHIP_ERROR error = sSubShell.ExecCommand(argc, argv2);
 
 		if (error != CHIP_NO_ERROR)
 		{
 			streamer_printf(streamer_get(), "Error: %" CHIP_ERROR_FORMAT "\r\n", error.Format());
 		}
-		return CHIP_NO_ERROR;
 	}
 
     // we either got a toggle, or an on when off, or an off when on,
