@@ -987,7 +987,7 @@ public:
 	CHIP_ERROR SendCommand(chip::DeviceProxy * device, std::vector<chip::EndpointId> endpointIds) override
 	{
 		ChipLogProgress(chipTool, "Sending cluster (0x00000006) command (0x00000043) on endpoint %u", endpointIds.at(0));
-		ChipLogDetail(DataManagement,"Debug sending OnAudio Command on 610");'
+		ChipLogDetail(DataManagement,"Debug sending OnAudio Command on 610");
 		/**
 		int argc = 1;
 		char* argv = "gst-launch-1.0 filesrc location=/data/matter.mp3 ! mpegaudioparse ! mpg123audiodec ! pulsesink volume=0.5";
