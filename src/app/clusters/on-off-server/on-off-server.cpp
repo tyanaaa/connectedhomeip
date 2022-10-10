@@ -343,6 +343,14 @@ bool OnOffServer::onCommand(const app::ConcreteCommandPath & commandPath)
     return true;
 }
 
+bool OnOffServer::onAudioCommand(const app::ConcreteCommandPath & commandPath)
+{
+	EmberAfStatus status = setOnOffValue(commandPath.mEndpointId, Commands::OnAudio::Id, false);
+
+	emberAfSendImmediateDefaultResponse(status);
+	return true;
+}
+
 bool OnOffServer::toggleCommand(const app::ConcreteCommandPath & commandPath)
 {
     EmberAfStatus status = setOnOffValue(commandPath.mEndpointId, Commands::Toggle::Id, false);
@@ -697,6 +705,12 @@ bool emberAfOnOffClusterOnCallback(app::CommandHandler * commandObj, const app::
                                    const Commands::On::DecodableType & commandData)
 {
     return OnOffServer::Instance().onCommand(commandPath);
+}
+
+bool emberAfOnOffClusterOnAudioCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
+	const Commands::On::DecodableType & commandData)
+{
+	return OnOffServer::Instance().onAudioCommand(commandPath);
 }
 
 bool emberAfOnOffClusterToggleCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,

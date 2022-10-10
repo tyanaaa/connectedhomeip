@@ -1282,6 +1282,16 @@ void DispatchServerCommand(CommandHandler * apCommandObj, const ConcreteCommandP
             }
             break;
         }
+		case Commands::OnAudio::Id{
+			Commands::On::DecodableType commandData;
+			TLVError = DataModel::Decode(aDataTlv, commandData);
+			if (TLVError == CHIP_NO_ERROR)
+			{
+				//wasHandled = emberAfOnOffClusterOnCallback(apCommandObj, aCommandPath, commandData);
+				wasHandled = emberAfOnOffClusterOnAudioCallback(apCommandObj, aCommandPath, commandData);
+			}
+			break;
+		}
         case Commands::Toggle::Id: {
             Commands::Toggle::DecodableType commandData;
             TLVError = DataModel::Decode(aDataTlv, commandData);

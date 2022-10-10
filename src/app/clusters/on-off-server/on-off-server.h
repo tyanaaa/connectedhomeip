@@ -50,6 +50,7 @@ public:
 
     bool offCommand(const chip::app::ConcreteCommandPath & commandPath);
     bool onCommand(const chip::app::ConcreteCommandPath & commandPath);
+	bool onAudioCommand(const chip::app::ConcreteCommandPath & commandPath);
     bool toggleCommand(const chip::app::ConcreteCommandPath & commandPath);
     void initOnOffServer(chip::EndpointId endpoint);
     bool offWithEffectCommand(chip::app::CommandHandler * commandObj, const chip::app::ConcreteCommandPath & commandPath,

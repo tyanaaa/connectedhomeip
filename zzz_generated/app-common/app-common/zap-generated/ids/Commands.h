@@ -196,6 +196,10 @@ namespace OnWithTimedOff {
 static constexpr CommandId Id = 0x00000042;
 } // namespace OnWithTimedOff
 
+namespace OnAudio {
+static constexpr CommandId Id = 0x00000043;
+} // namespace OnWithAudio
+
 } // namespace Commands
 } // namespace OnOff
 
