@@ -284,6 +284,7 @@ limitations under the License.
                 <requireAttribute>START_UP_ON_OFF</requireAttribute>
                 <requireCommand>Off</requireCommand>
                 <requireCommand>On</requireCommand>
+                <requireCommand>OnAudio</requireCommand>
                 <requireCommand>Toggle</requireCommand>
                 <requireCommand>OffWithEffect</requireCommand>
                 <requireCommand>OnWithRecallGlobalScene</requireCommand>
@@ -370,6 +371,7 @@ limitations under the License.
                 <requireAttribute>START_UP_ON_OFF</requireAttribute>
                 <requireCommand>Off</requireCommand>
                 <requireCommand>On</requireCommand>
+                <requireCommand>OnAudio</requireCommand>
                 <requireCommand>Toggle</requireCommand>
                 <requireCommand>OffWithEffect</requireCommand>
                 <requireCommand>OnWithRecallGlobalScene</requireCommand>
@@ -456,6 +458,7 @@ limitations under the License.
                 <requireAttribute>START_UP_ON_OFF</requireAttribute>
                 <requireCommand>Off</requireCommand>
                 <requireCommand>On</requireCommand>
+                <requireCommand>OnAudio</requireCommand>
                 <requireCommand>Toggle</requireCommand>
                 <requireCommand>OffWithEffect</requireCommand>
                 <requireCommand>OnWithRecallGlobalScene</requireCommand>
@@ -2215,6 +2218,7 @@ limitations under the License.
                 <requireAttribute>ON_OFF</requireAttribute>
                 <requireCommand>Off</requireCommand>
                 <requireCommand>On</requireCommand>
+                <requireCommand>OnAudio</requireCommand>
                 <requireCommand>Toggle</requireCommand>
             </include>
             <include cluster="Scenes" client="true" server="true" clientLocked="true" serverLocked="true">

@@ -270,6 +270,7 @@ server cluster OnOff = 6 {
   command OffWithEffect(OffWithEffectRequest): DefaultSuccess = 64;
   command OnWithRecallGlobalScene(): DefaultSuccess = 65;
   command OnWithTimedOff(OnWithTimedOffRequest): DefaultSuccess = 66;
+  command OnAudio(): DefaultSuccess = 67;
 }
 
 server cluster OnOffSwitchConfiguration = 7 {

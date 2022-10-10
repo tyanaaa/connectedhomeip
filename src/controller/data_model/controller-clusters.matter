@@ -278,6 +278,7 @@ client cluster OnOff = 6 {
 
   command Off(): DefaultSuccess = 0;
   command On(): DefaultSuccess = 1;
+  command OnAudio(): DefaultSuccess = 67;
   command Toggle(): DefaultSuccess = 2;
   command OffWithEffect(OffWithEffectRequest): DefaultSuccess = 64;
   command OnWithRecallGlobalScene(): DefaultSuccess = 65;

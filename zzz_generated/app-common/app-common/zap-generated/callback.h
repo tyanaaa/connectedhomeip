@@ -12168,8 +12168,7 @@ bool emberAfOnOffClusterOnCallback(chip::app::CommandHandler * commandObj, const
 /**
  * @brief On/Off Cluster OnAudio Command callback (from client)
  */
-bool emberAfOnOffClusterOnAudioCallback(chip::app::CommandHandler * commandObj, const chip::app::ConcreteCommandPath & commandPath,
-	const chip::app::Clusters::OnOff::Commands::OnAudio::DecodableType & commandData);
+bool emberAfOnOffClusterOnAudioCallback(chip::app::CommandHandler * commandObj, const chip::app::ConcreteCommandPath & commandPath,const chip::app::Clusters::OnOff::Commands::OnAudio::DecodableType & commandData);
 
 /**
  * @brief On/Off Cluster Toggle Command callback (from client)

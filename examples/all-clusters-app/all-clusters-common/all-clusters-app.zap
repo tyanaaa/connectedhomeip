@@ -594,6 +594,14 @@
               "source": "client",
               "incoming": 1,
               "outgoing": 1
+            },
+            {
+              "name": "OnAudio",
+              "code": 67,
+              "mfgCode": null,
+              "source": "client",
+              "incoming": 1,
+              "outgoing": 1
             }
           ],
           "attributes": [
@@ -9236,6 +9244,14 @@
             {
               "name": "Toggle",
               "code": 2,
+              "mfgCode": null,
+              "source": "client",
+              "incoming": 1,
+              "outgoing": 1
+            },
+            {
+              "name": "OnAudio",
+              "code": 67,
               "mfgCode": null,
               "source": "client",
               "incoming": 1,
