@@ -68,7 +68,7 @@ CHIP_ERROR cmd_610_cli(int argc, char ** argv)
 	{
 		streamer_printf(streamer_get(), "%s ", argv[i]);
 	}
-	streamer_printf(streamer_get(), "\n\r");
+	//streamer_printf(streamer_get(), "\n\r");
 
 	CHIP_ERROR error = sSubShell.ExecCommand(argc, argv);
 
