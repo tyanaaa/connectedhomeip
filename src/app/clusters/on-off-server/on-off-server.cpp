@@ -708,7 +708,7 @@ bool emberAfOnOffClusterOnCallback(app::CommandHandler * commandObj, const app::
 }
 
 bool emberAfOnOffClusterOnAudioCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
-	const Commands::On::DecodableType & commandData)
+	const Commands::OnAudio::DecodableType & commandData)
 {
 	return OnOffServer::Instance().onAudioCommand(commandPath);
 }
