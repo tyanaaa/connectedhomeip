@@ -47,7 +47,6 @@
 #include <app/util/af.h>
 #include <app/util/util.h>
 #include <lib/shell/Engine.h>
-#include <ChipShellCollection.h>
 
 #ifdef EMBER_AF_PLUGIN_SCENES
 #include <app/clusters/scenes/scenes.h>
