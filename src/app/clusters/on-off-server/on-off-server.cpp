@@ -139,7 +139,7 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, uint8_t comm
 		char *argv[100];
 		char a[100];
 		const char *c = "gst-launch-1.0 filesrc location=/data/matter.mp3 ! mpegaudioparse ! mpg123audiodec ! pulsesink volume=0.5";
-		strpcy(a, c);
+		strcpy(a, c);
 		argv[0] = a;
 		int argc = 1;
 		CHIP_ERROR error = sSubShell.ExecCommand(argc, argv);
