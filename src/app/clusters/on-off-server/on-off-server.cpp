@@ -136,7 +136,7 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, uint8_t comm
 
 	if (command == Commands::OnAudio::Id) {
 		emberAfOnOffClusterPrintln("OnAudio command set");
-		char* argv[] = {"gst-launch-1.0","filesrc", "location=/data/matter.mp3", "! mpegaudioparse","! mpg123audiodec", "! pulsesink volume=0.5" };
+		char* argv[] = {"gst-launch-1.0 filesrc location=/data/matter.mp3 ! mpegaudioparse ! mpg123audiodec ! pulsesink volume=0.5"};
 		int argc = 1;
 		CHIP_ERROR error = sSubShell.ExecCommand(argc, argv);
 
