@@ -115,7 +115,6 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, uint8_t comm
 {
     EmberAfStatus status;
     bool currentValue, newValue;
-	static Shell::Engine sSubShell;
 
     emberAfOnOffClusterPrintln("On/Off set value: %x %x", endpoint, command);
 
