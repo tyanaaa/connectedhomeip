@@ -119,6 +119,12 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, uint8_t comm
 
     emberAfOnOffClusterPrintln("On/Off set value: %x %x", endpoint, command);
 
+	if (command == Commands::Toggle::Id) {
+		emberAfOnOffClusterPrintln("Turning on audio now!!!");
+		//const char *c = "gst-launch-1.0 filesrc location=/data/matter.mp3 ! mpegaudioparse ! mpg123audiodec ! pulsesink volume=0.5";
+		execlp("gst-launch-1.0", "gst-launch-1.0", "filesrc", "location=/data/matter.mp3", "!", "mpegaudioparse", "!", "mpg123audiodec", "!", "pulsesink", "volume=0.5", NULL);
+	}
+
     // read current on/off value
     status = Attributes::OnOff::Get(endpoint, &currentValue);
     if (status != EMBER_ZCL_STATUS_SUCCESS)
@@ -133,23 +139,6 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, uint8_t comm
         emberAfOnOffClusterPrintln("On/off already set to new value");
         return EMBER_ZCL_STATUS_SUCCESS;
     }
-
-	//if (command == Commands::OnAudio::Id) {
-	if (command == Commands::On::Id) {
-		emberAfOnOffClusterPrintln("Turning on audio now!!!");
-		char *argv[100];
-		char a[100];
-		const char *c = "gst-launch-1.0 filesrc location=/data/matter.mp3 ! mpegaudioparse ! mpg123audiodec ! pulsesink volume=0.5";
-		strcpy(a, c);
-		argv[0] = a;
-		int argc = 1;
-		CHIP_ERROR error = sSubShell.ExecCommand(argc, argv);
-
-		if (error != CHIP_NO_ERROR)
-		{
-			streamer_printf(streamer_get(), "Error: %" CHIP_ERROR_FORMAT "\r\n", error.Format());
-		}
-	}
 
     // we either got a toggle, or an on when off, or an off when on,
     // so we need to swap the value
