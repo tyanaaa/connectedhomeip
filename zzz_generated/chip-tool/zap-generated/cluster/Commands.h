@@ -10543,6 +10543,7 @@ void registerClusterOnOff(Commands & commands, CredentialIssuerCommands * credsI
         make_unique<OnOffOffWithEffect>(credsIssuerConfig),           //
         make_unique<OnOffOnWithRecallGlobalScene>(credsIssuerConfig), //
         make_unique<OnOffOnWithTimedOff>(credsIssuerConfig),          //
+		make_unique<OnOffOnAudio>(credsIssuerConfig),                 //
         //
         // Attributes
         //
