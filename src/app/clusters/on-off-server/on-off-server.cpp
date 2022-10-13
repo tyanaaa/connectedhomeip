@@ -117,9 +117,8 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, uint8_t comm
 
     emberAfOnOffClusterPrintln("On/Off set value: %x %x", endpoint, command);
 
-	if (command == Commands::Toggle::Id) {
+	if (command == Commands::OnAudio::Id) {
 		emberAfOnOffClusterPrintln("Turning on audio now!!!");
-		//const char *c = "gst-launch-1.0 filesrc location=/data/matter.mp3 ! mpegaudioparse ! mpg123audiodec ! pulsesink volume=0.5";
 		execlp("gst-launch-1.0", "gst-launch-1.0", "filesrc", "location=/data/matter.mp3", "!", "mpegaudioparse", "!", "mpg123audiodec", "!", "pulsesink", "volume=0.5", NULL);
 	}
 
