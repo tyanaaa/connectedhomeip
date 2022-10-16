@@ -236,7 +236,11 @@ extern void OTAIdleActivities(void);
 
 void vApplicationIdleHook(void)
 {
+    vTaskSuspendAll();
     PDM_vIdleTask(PDM_MAX_WRITES_INFINITE);
+    xTaskResumeAll();
+
     OTAIdleActivities();
+
     BOARD_ActionOnIdle();
 }

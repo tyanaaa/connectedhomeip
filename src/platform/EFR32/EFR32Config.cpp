@@ -84,7 +84,7 @@ CHIP_ERROR EFR32Config::ReadConfigValue(Key key, bool & val)
     CHIP_ERROR err;
     uint32_t objectType;
     size_t dataLen;
-    bool tmpVal;
+    bool tmpVal = 0;
 
     VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
 
@@ -106,7 +106,7 @@ CHIP_ERROR EFR32Config::ReadConfigValue(Key key, uint32_t & val)
     CHIP_ERROR err;
     uint32_t objectType;
     size_t dataLen;
-    uint32_t tmpVal;
+    uint32_t tmpVal = 0;
 
     VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
 
@@ -128,7 +128,7 @@ CHIP_ERROR EFR32Config::ReadConfigValue(Key key, uint64_t & val)
     CHIP_ERROR err;
     uint32_t objectType;
     size_t dataLen;
-    uint64_t tmpVal;
+    uint64_t tmpVal = 0;
 
     VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
 
@@ -236,7 +236,6 @@ CHIP_ERROR EFR32Config::ReadConfigValueBin(Key key, uint8_t * buf, size_t bufSiz
     // Get nvm3 object info.
     err = MapNvm3Error(nvm3_getObjectInfo(nvm3_defaultHandle, key, &objectType, &dataLen));
     SuccessOrExit(err);
-    VerifyOrExit(dataLen > 0, err = CHIP_ERROR_INVALID_STRING_LENGTH);
 
     if (buf != NULL)
     {
@@ -265,8 +264,8 @@ exit:
 CHIP_ERROR EFR32Config::ReadConfigValueCounter(uint8_t counterIdx, uint32_t & val)
 {
     CHIP_ERROR err;
-    uint32_t tmpVal;
-    Key key = kMinConfigKey_MatterCounter + counterIdx;
+    uint32_t tmpVal = 0;
+    Key key         = kMinConfigKey_MatterCounter + counterIdx;
 
     VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
 
@@ -325,7 +324,7 @@ CHIP_ERROR EFR32Config::WriteConfigValueStr(Key key, const char * str)
 
 CHIP_ERROR EFR32Config::WriteConfigValueStr(Key key, const char * str, size_t strLen)
 {
-    CHIP_ERROR err;
+    CHIP_ERROR err = CHIP_ERROR_INVALID_ARGUMENT;
 
     VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
 
@@ -336,10 +335,6 @@ CHIP_ERROR EFR32Config::WriteConfigValueStr(Key key, const char * str, size_t st
         err = MapNvm3Error(nvm3_writeData(nvm3_defaultHandle, key, str, (strLen > 0) ? strLen : 1));
         SuccessOrExit(err);
     }
-    else
-    {
-        nvm3_deleteObject(nvm3_defaultHandle, key); // no error checking here.
-    }
 
 exit:
     return err;
@@ -347,22 +342,16 @@ exit:
 
 CHIP_ERROR EFR32Config::WriteConfigValueBin(Key key, const uint8_t * data, size_t dataLen)
 {
-    CHIP_ERROR err;
+    CHIP_ERROR err = CHIP_ERROR_INVALID_ARGUMENT;
 
     VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
 
-    if (data != NULL)
+    // Only write NULL pointer if the given size is 0, since in that case, nothing is read at the pointer
+    if ((data != NULL) || (dataLen == 0))
     {
-        if (dataLen > 0)
-        {
-            // Write the binary data to nvm3.
-            err = MapNvm3Error(nvm3_writeData(nvm3_defaultHandle, key, data, dataLen));
-            SuccessOrExit(err);
-        }
-    }
-    else
-    {
-        nvm3_deleteObject(nvm3_defaultHandle, key); // no error checking here.
+        // Write the binary data to nvm3.
+        err = MapNvm3Error(nvm3_writeData(nvm3_defaultHandle, key, data, dataLen));
+        SuccessOrExit(err);
     }
 
 exit:
@@ -402,6 +391,22 @@ bool EFR32Config::ConfigValueExists(Key key)
 
     // Find object with key id.
     CHIP_ERROR err = MapNvm3Error(nvm3_getObjectInfo(nvm3_defaultHandle, key, &objectType, &dataLen));
+    return (err == CHIP_NO_ERROR);
+}
+
+bool EFR32Config::ConfigValueExists(Key key, size_t & dataLen)
+{
+    uint32_t objectType;
+    size_t dLen;
+
+    // Find object with key id.
+    CHIP_ERROR err = MapNvm3Error(nvm3_getObjectInfo(nvm3_defaultHandle, key, &objectType, &dLen));
+
+    if (err == CHIP_NO_ERROR)
+    {
+        dataLen = dLen;
+    }
+
     return (err == CHIP_NO_ERROR);
 }
 

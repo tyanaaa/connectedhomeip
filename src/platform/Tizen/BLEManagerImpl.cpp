@@ -65,9 +65,6 @@ static constexpr unsigned kNewConnectionScanTimeoutMs = 10000;
 /* Tizen Default Connect Timeout */
 constexpr System::Clock::Timeout kConnectTimeoutMs = System::Clock::Seconds16(10);
 
-const int BtpServiceDataLenMax =
-    7; // OpCode(1) + Discriminator(2) + VendorId(2) + ProductId(2), 5.2.3.8.6. Advertising Data, CHIP Specification
-
 static void __AdapterStateChangedCb(int result, bt_adapter_state_e adapterState, void * userData)
 {
     ChipLogProgress(DeviceLayer, "Adapter State Changed: %s", adapterState == BT_ADAPTER_ENABLED ? "Enabled" : "Disabled");
@@ -458,7 +455,7 @@ void BLEManagerImpl::OnChipDeviceScanned(void * device, const chip::Ble::ChipBLE
 
     if (mBLEScanConfig.mBleScanState == BleScanState::kScanForDiscriminator)
     {
-        if (info.GetDeviceDiscriminator() != mBLEScanConfig.mDiscriminator)
+        if (!mBLEScanConfig.mDiscriminator.MatchesLongDiscriminator(info.GetDeviceDiscriminator()))
         {
             return;
         }
@@ -487,7 +484,7 @@ void BLEManagerImpl::OnChipDeviceScanned(void * device, const chip::Ble::ChipBLE
     ConnectHandler(deviceInfo->remote_address);
 }
 
-void BLEManagerImpl::OnChipScanComplete(void)
+void BLEManagerImpl::OnChipScanComplete()
 {
     if (mBLEScanConfig.mBleScanState != BleScanState::kScanForDiscriminator &&
         mBLEScanConfig.mBleScanState != BleScanState::kScanForAddress)
@@ -582,11 +579,11 @@ exit:
     return ret;
 }
 
-int BLEManagerImpl::StartAdvertising()
+int BLEManagerImpl::StartBLEAdvertising()
 {
-    int ret                                 = BT_ERROR_NONE;
-    CHIP_ERROR err                          = CHIP_NO_ERROR;
-    char service_data[BtpServiceDataLenMax] = {
+    int ret                                                    = BT_ERROR_NONE;
+    CHIP_ERROR err                                             = CHIP_NO_ERROR;
+    char service_data[sizeof(ChipBLEDeviceIdentificationInfo)] = {
         0x0,
     }; // need to fill advertising data. 5.2.3.8.6. Advertising Data, CHIP Specification
     ChipBLEDeviceIdentificationInfo deviceIdInfo = {
@@ -652,7 +649,7 @@ exit:
     return ret;
 }
 
-int BLEManagerImpl::StopAdvertising()
+int BLEManagerImpl::StopBLEAdvertising()
 {
     int ret = BT_ERROR_NONE;
 
@@ -667,7 +664,7 @@ exit:
     return ret;
 }
 
-void BLEManagerImpl::InitConnectionData(void)
+void BLEManagerImpl::InitConnectionData()
 {
     /* Initialize Hashmap */
     if (!mConnectionMap)
@@ -875,13 +872,13 @@ void BLEManagerImpl::DriveBLEState()
     {
         if (!mFlags.Has(Flags::kAdvertising))
         {
-            ret = StartAdvertising();
+            ret = StartBLEAdvertising();
             VerifyOrExit(ret == BT_ERROR_NONE, ChipLogError(DeviceLayer, "Start Advertising Failed. ret: %d", ret));
         }
         else if (mFlags.Has(Flags::kAdvertisingRefreshNeeded))
         {
             ChipLogProgress(DeviceLayer, "Advertising Refreshed Needed. Stop Advertising");
-            ret = StopAdvertising();
+            ret = StopBLEAdvertising();
             VerifyOrExit(ret == BT_ERROR_NONE, ChipLogError(DeviceLayer, "Stop Advertising Failed. ret: %d", ret));
         }
     }
@@ -889,7 +886,7 @@ void BLEManagerImpl::DriveBLEState()
     {
         ChipLogProgress(DeviceLayer, "Stop Advertising");
 
-        ret = StopAdvertising();
+        ret = StopBLEAdvertising();
         VerifyOrExit(ret == BT_ERROR_NONE, ChipLogError(DeviceLayer, "Stop Advertising Failed. ret: %d", ret));
 
         ret = bt_adapter_le_destroy_advertiser(mAdvertiser);
@@ -909,7 +906,7 @@ void BLEManagerImpl::DriveBLEState(intptr_t arg)
     sInstance.DriveBLEState();
 }
 
-CHIP_ERROR BLEManagerImpl::_Init(void)
+CHIP_ERROR BLEManagerImpl::_Init()
 {
     CHIP_ERROR err;
     bool ret;
@@ -929,21 +926,10 @@ exit:
     return err;
 }
 
-CHIP_ERROR BLEManagerImpl::_SetCHIPoBLEServiceMode(CHIPoBLEServiceMode val)
+void BLEManagerImpl::_Shutdown()
 {
-    CHIP_ERROR err = CHIP_NO_ERROR;
-
-    VerifyOrExit(val != ConnectivityManager::kCHIPoBLEServiceMode_NotSupported, err = CHIP_ERROR_INVALID_ARGUMENT);
-    VerifyOrExit(mServiceMode == ConnectivityManager::kCHIPoBLEServiceMode_NotSupported, err = CHIP_ERROR_UNSUPPORTED_CHIP_FEATURE);
-
-    if (val != mServiceMode)
-    {
-        mServiceMode = val;
-        PlatformMgr().ScheduleWork(DriveBLEState, 0);
-    }
-
-exit:
-    return err;
+    int ret = bt_deinitialize();
+    VerifyOrReturn(ret == BT_ERROR_NONE, ChipLogError(DeviceLayer, "bt_deinitialize() failed. ret: %d", ret));
 }
 
 CHIP_ERROR BLEManagerImpl::_SetAdvertisingEnabled(bool val)
@@ -1014,7 +1000,7 @@ exit:
     return err;
 }
 
-uint16_t BLEManagerImpl::_NumConnections(void)
+uint16_t BLEManagerImpl::_NumConnections()
 {
     return 0;
 }
@@ -1026,7 +1012,7 @@ CHIP_ERROR BLEManagerImpl::ConfigureBle(uint32_t aAdapterId, bool aIsCentral)
     return CHIP_NO_ERROR;
 }
 
-void BLEManagerImpl::CleanScanConfig(void)
+void BLEManagerImpl::CleanScanConfig()
 {
     if (mBLEScanConfig.mBleScanState == BleScanState::kConnecting)
         chip::DeviceLayer::SystemLayer().CancelTimer(HandleConnectionTimeout, nullptr);
@@ -1140,7 +1126,6 @@ void BLEManagerImpl::_OnPlatformEvent(const ChipDeviceEvent * event)
         HandleConnectionError(event->CHIPoBLEConnectionError.ConId, event->CHIPoBLEConnectionError.Reason);
         break;
     case DeviceEventType::kServiceProvisioningChange:
-    case DeviceEventType::kAccountPairingChange:
         break;
     default:
         HandlePlatformSpecificBLEEvent(event);
@@ -1308,11 +1293,18 @@ bool BLEManagerImpl::SendReadResponse(BLE_CONNECTION_OBJECT conId, BLE_READ_REQU
 
 void BLEManagerImpl::NotifyChipConnectionClosed(BLE_CONNECTION_OBJECT conId) {}
 
-void BLEManagerImpl::NewConnection(BleLayer * bleLayer, void * appState, const uint16_t connDiscriminator)
+void BLEManagerImpl::NewConnection(BleLayer * bleLayer, void * appState, const SetupDiscriminator & connDiscriminator)
 {
     mBLEScanConfig.mDiscriminator = connDiscriminator;
     mBLEScanConfig.mAppState      = appState;
-    ChipLogProgress(DeviceLayer, "NewConnection: discriminator value [%u]", connDiscriminator);
+    if (connDiscriminator.IsShortDiscriminator())
+    {
+        ChipLogProgress(DeviceLayer, "NewConnection: short discriminator value [%u]", connDiscriminator.GetShortValue());
+    }
+    else
+    {
+        ChipLogProgress(DeviceLayer, "NewConnection: long discriminator value [%u]", connDiscriminator.GetLongValue());
+    }
 
     // Initiate Scan.
     PlatformMgr().ScheduleWork(InitiateScan, static_cast<intptr_t>(BleScanState::kScanForDiscriminator));

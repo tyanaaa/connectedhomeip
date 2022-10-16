@@ -93,10 +93,13 @@ CHIP_ERROR KeyValueStoreManagerImpl::_Get(const char * key, void * value, size_t
     {
         // This is the ID of the actual data
         pdmInternalId = chip::DeviceLayer::Internal::K32WConfigKey(pdmIdKvsValue, keyId);
+        ChipLogProgress(DeviceLayer, "KVS, get the value of Matter key [%s] with PDM id: %i", key, pdmInternalId);
         err = chip::DeviceLayer::Internal::K32WConfig::ReadConfigValueBin(pdmInternalId, (uint8_t *) value, value_size, read_bytes);
         *read_bytes_size = read_bytes;
-
-        ChipLogProgress(DeviceLayer, "KVS, get Matter key [%s] with PDM id: %i", key, pdmInternalId);
+    }
+    else
+    {
+        ChipLogProgress(DeviceLayer, "KVS, Matter key [%s] not found in persistent storage.", key);
     }
 
 exit:
@@ -118,15 +121,9 @@ CHIP_ERROR KeyValueStoreManagerImpl::_Put(const char * key, const void * value, 
 
     keyId = GetStringKeyId(key, &freeKeyId);
 
-    // Key already exists
-    if (keyId < kMaxNumberOfKeys)
+    // Key does not exist. Write both key and value in persistent storage.
+    if (kMaxNumberOfKeys == keyId)
     {
-        // Update just the value in this case
-        putKey = false;
-    }
-    else
-    {
-        // Need to write both the value and the string key
         putKey = true;
         keyId  = freeKeyId;
     }

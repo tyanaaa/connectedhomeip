@@ -17,7 +17,7 @@
  */
 
 #pragma once
-#include <app/OperationalDeviceProxy.h>
+#include <app/OperationalSessionSetup.h>
 #include <controller/CommissioneeDeviceProxy.h>
 #include <credentials/attestation_verifier/DeviceAttestationDelegate.h>
 #include <credentials/attestation_verifier/DeviceAttestationVerifier.h>
@@ -32,26 +32,31 @@ class DeviceCommissioner;
 enum CommissioningStage : uint8_t
 {
     kError,
-    kSecurePairing,
-    kReadCommissioningInfo,
-    kArmFailsafe,
-    kConfigRegulatory,
-    kSendPAICertificateRequest,
-    kSendDACCertificateRequest,
-    kSendAttestationRequest,
-    kAttestationVerification,
-    kSendOpCertSigningRequest,
-    kValidateCSR,
-    kGenerateNOCChain,
-    kSendTrustedRootCert,
-    kSendNOC,
-    kWiFiNetworkSetup,
-    kThreadNetworkSetup,
-    kWiFiNetworkEnable,
-    kThreadNetworkEnable,
-    kFindOperational,
-    kSendComplete,
-    kCleanup,
+    kSecurePairing,             ///< Establish a PASE session with the device
+    kReadCommissioningInfo,     ///< Query General Commissioning Attributes and Network Features
+    kArmFailsafe,               ///< Send ArmFailSafe (0x30:0) command to the device
+    kConfigRegulatory,          ///< Send SetRegulatoryConfig (0x30:2) command to the device
+    kSendPAICertificateRequest, ///< Send PAI CertificateChainRequest (0x3E:2) command to the device
+    kSendDACCertificateRequest, ///< Send DAC CertificateChainRequest (0x3E:2) command to the device
+    kSendAttestationRequest,    ///< Send AttestationRequest (0x3E:0) command to the device
+    kAttestationVerification,   ///< Verify AttestationResponse (0x3E:1) validity
+    kSendOpCertSigningRequest,  ///< Send CSRRequest (0x3E:4) command to the device
+    kValidateCSR,               ///< Verify CSRResponse (0x3E:5) validity
+    kGenerateNOCChain,          ///< TLV encode Node Operational Credentials (NOC) chain certs
+    kSendTrustedRootCert,       ///< Send AddTrustedRootCertificate (0x3E:11) command to the device
+    kSendNOC,                   ///< Send AddNOC (0x3E:6) command to the device
+    kWiFiNetworkSetup,          ///< Send AddOrUpdateWiFiNetwork (0x31:2) command to the device
+    kThreadNetworkSetup,        ///< Send AddOrUpdateThreadNetwork (0x31:3) command to the device
+    kWiFiNetworkEnable,         ///< Send ConnectNetwork (0x31:6) command to the device for the WiFi network
+    kThreadNetworkEnable,       ///< Send ConnectNetwork (0x31:6) command to the device for the Thread network
+    kFindOperational,           ///< Perform operational discovery and establish a CASE session with the device
+    kSendComplete,              ///< Send CommissioningComplete (0x30:4) command to the device
+    kCleanup,                   ///< Call delegates with status, free memory, clear timers and state
+    /// Send ScanNetworks (0x31:0) command to the device.
+    /// ScanNetworks can happen anytime after kArmFailsafe.
+    /// However, the cirque tests fail if it is earlier in the list
+    kScanNetworks,
+    kNeedsNetworkCreds,
 };
 
 const char * StageToString(CommissioningStage stage);
@@ -192,6 +197,10 @@ public:
     // This must be set before calling PerformCommissioningStep for the kAttestationVerification step.
     const Optional<ByteSpan> GetDAC() const { return mDAC; }
 
+    // Node ID when a matching fabric is found in the Node Operational Credentials cluster.
+    // In the AutoCommissioner, this is set from kReadCommissioningInfo stage.
+    const Optional<NodeId> GetRemoteNodeId() const { return mRemoteNodeId; }
+
     // Node vendor ID from the basic information cluster. In the AutoCommissioner, this is automatically set from report from the
     // kReadCommissioningInfo stage.
     // This must be set before calling PerformCommissioningStep for the kAttestationVerification step.
@@ -261,10 +270,12 @@ public:
         return *this;
     }
 
+    // If a ThreadOperationalDataset is provided, then the ThreadNetworkScan will not be attempted
     CommissioningParameters & SetThreadOperationalDataset(ByteSpan threadOperationalDataset)
     {
 
         mThreadOperationalDataset.SetValue(threadOperationalDataset);
+        mAttemptThreadNetworkScan = MakeOptional(static_cast<bool>(false));
         return *this;
     }
     // This parameter should be set with the information returned from kSendOpCertSigningRequest. It must be set before calling
@@ -322,6 +333,11 @@ public:
         mDAC = MakeOptional(dac);
         return *this;
     }
+    CommissioningParameters & SetRemoteNodeId(NodeId id)
+    {
+        mRemoteNodeId = MakeOptional(id);
+        return *this;
+    }
     CommissioningParameters & SetRemoteVendorId(VendorId id)
     {
         mRemoteVendorId = MakeOptional(id);
@@ -352,6 +368,45 @@ public:
 
     Credentials::DeviceAttestationDelegate * GetDeviceAttestationDelegate() const { return mDeviceAttestationDelegate; }
 
+    // If an SSID is provided, and AttemptWiFiNetworkScan is true,
+    // then a directed scan will be performed using the SSID provided in the WiFiCredentials object
+    Optional<bool> GetAttemptWiFiNetworkScan() const { return mAttemptWiFiNetworkScan; }
+    CommissioningParameters & SetAttemptWiFiNetworkScan(bool attemptWiFiNetworkScan)
+    {
+        mAttemptWiFiNetworkScan = MakeOptional(attemptWiFiNetworkScan);
+        return *this;
+    }
+
+    // If a ThreadOperationalDataset is provided, then the ThreadNetworkScan will not be attempted
+    Optional<bool> GetAttemptThreadNetworkScan() const { return mAttemptThreadNetworkScan; }
+    CommissioningParameters & SetAttemptThreadNetworkScan(bool attemptThreadNetworkScan)
+    {
+        if (!mThreadOperationalDataset.HasValue())
+        {
+            mAttemptThreadNetworkScan = MakeOptional(attemptThreadNetworkScan);
+        }
+        return *this;
+    }
+
+    // Only perform the PASE steps of commissioning.
+    // Commissioning will be completed by another admin on the network.
+    Optional<bool> GetSkipCommissioningComplete() const { return mSkipCommissioningComplete; }
+    CommissioningParameters & SetSkipCommissioningComplete(bool skipCommissioningComplete)
+    {
+        mSkipCommissioningComplete = MakeOptional(skipCommissioningComplete);
+        return *this;
+    }
+
+    // Check for matching fabric on target device by reading fabric list and looking for a
+    // fabricId and RootCert match. If a match is detected, then use GetNodeId() to
+    // access the nodeId for the device on the matching fabric.
+    bool GetCheckForMatchingFabric() const { return mCheckForMatchingFabric; }
+    CommissioningParameters & SetCheckForMatchingFabric(bool checkForMatchingFabric)
+    {
+        mCheckForMatchingFabric = checkForMatchingFabric;
+        return *this;
+    }
+
 private:
     // Items that can be set by the commissioner
     Optional<uint16_t> mFailsafeTimerSeconds;
@@ -372,6 +427,7 @@ private:
     Optional<ByteSpan> mAttestationSignature;
     Optional<ByteSpan> mPAI;
     Optional<ByteSpan> mDAC;
+    Optional<NodeId> mRemoteNodeId;
     Optional<VendorId> mRemoteVendorId;
     Optional<uint16_t> mRemoteProductId;
     Optional<app::Clusters::GeneralCommissioning::RegulatoryLocationType> mDefaultRegulatoryLocation;
@@ -379,6 +435,10 @@ private:
     CompletionStatus completionStatus;
     Credentials::DeviceAttestationDelegate * mDeviceAttestationDelegate =
         nullptr; // Delegate to handle device attestation failures during commissioning
+    Optional<bool> mAttemptWiFiNetworkScan;
+    Optional<bool> mAttemptThreadNetworkScan; // This automatically gets set to false when a ThreadOperationalDataset is set
+    Optional<bool> mSkipCommissioningComplete;
+    bool mCheckForMatchingFabric = false;
 };
 
 struct RequestedCertificate
@@ -417,8 +477,8 @@ struct NocChain
 
 struct OperationalNodeFoundData
 {
-    OperationalNodeFoundData(OperationalDeviceProxy * proxy) : operationalProxy(proxy) {}
-    OperationalDeviceProxy * operationalProxy;
+    OperationalNodeFoundData(OperationalDeviceProxy proxy) : operationalProxy(proxy) {}
+    OperationalDeviceProxy operationalProxy;
 };
 
 struct NetworkClusterInfo
@@ -453,6 +513,7 @@ struct ReadCommissioningInfo
     NetworkClusters network;
     BasicClusterInfo basic;
     GeneralCommissioningInfo general;
+    NodeId nodeId = kUndefinedNodeId;
 };
 
 struct AttestationErrorInfo

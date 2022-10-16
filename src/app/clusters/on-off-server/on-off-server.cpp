@@ -15,29 +15,6 @@
  *    limitations under the License.
  */
 
-/**
- *
- *    Copyright (c) 2020 Silicon Labs
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
-/***************************************************************************/
-/**
- * @file
- * @brief Routines for the On-Off plugin, which
- *implements the On-Off server cluster.
- *******************************************************************************
- ******************************************************************************/
 #include "on-off-server.h"
 
 #include <app-common/zap-generated/attributes/Accessors.h>
@@ -110,12 +87,12 @@ EmberAfStatus OnOffServer::getOnOffValue(chip::EndpointId endpoint, bool * curre
  * @param command   Ver.: always
  * @param initiatedByLevelChange   Ver.: always
  */
-EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, uint8_t command, bool initiatedByLevelChange)
+EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::CommandId command, bool initiatedByLevelChange)
 {
     EmberAfStatus status;
     bool currentValue, newValue;
 
-    emberAfOnOffClusterPrintln("On/Off set value: %x %x", endpoint, command);
+    emberAfOnOffClusterPrintln("On/Off set value: %x %x", endpoint, static_cast<uint8_t>(command));
 
 	if (command == Commands::OnAudio::Id) {
 		emberAfOnOffClusterPrintln("Turning on audio now!!!");
@@ -217,15 +194,19 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, uint8_t comm
         {
             emberAfOnOffClusterLevelControlEffectCallback(endpoint, newValue);
         }
-#endif
-
-        // write the new on/off value
-        status = Attributes::OnOff::Set(endpoint, newValue);
-        if (status != EMBER_ZCL_STATUS_SUCCESS)
+        else
         {
-            emberAfOnOffClusterPrintln("ERR: writing on/off %x", status);
-            return status;
+#endif
+            // write the new on/off value
+            status = Attributes::OnOff::Set(endpoint, newValue);
+            if (status != EMBER_ZCL_STATUS_SUCCESS)
+            {
+                emberAfOnOffClusterPrintln("ERR: writing on/off %x", status);
+                return status;
+            }
+#ifdef EMBER_AF_PLUGIN_LEVEL_CONTROL
         }
+#endif
     }
 
 #ifdef EMBER_AF_PLUGIN_SCENES
@@ -271,7 +252,7 @@ void OnOffServer::initOnOffServer(chip::EndpointId endpoint)
         EmberAfStatus status      = getOnOffValueForStartUp(endpoint, onOffValueForStartUp);
         if (status == EMBER_ZCL_STATUS_SUCCESS)
         {
-            status = setOnOffValue(endpoint, onOffValueForStartUp, false);
+            status = setOnOffValue(endpoint, onOffValueForStartUp, true);
         }
 
 #ifdef EMBER_AF_PLUGIN_MODE_SELECT
@@ -467,6 +448,26 @@ bool OnOffServer::OnWithRecallGlobalSceneCommand(app::CommandHandler * commandOb
     return true;
 }
 
+uint32_t OnOffServer::calculateNextWaitTimeMS(void)
+{
+    const chip::System::Clock::Timestamp currentTime = chip::System::SystemClock().GetMonotonicTimestamp();
+    chip::System::Clock::Timestamp waitTime          = UPDATE_TIME_MS;
+    chip::System::Clock::Timestamp latency;
+
+    if (currentTime > nextDesiredOnWithTimedOffTimestamp)
+    {
+        latency = currentTime - nextDesiredOnWithTimedOffTimestamp;
+        if (latency >= UPDATE_TIME_MS)
+            waitTime = chip::System::Clock::Milliseconds32(1);
+        else
+            waitTime -= latency;
+    }
+
+    nextDesiredOnWithTimedOffTimestamp += UPDATE_TIME_MS;
+
+    return (uint32_t) waitTime.count();
+}
+
 bool OnOffServer::OnWithTimedOffCommand(const app::ConcreteCommandPath & commandPath,
                                         const Commands::OnWithTimedOff::DecodableType & commandData)
 {
@@ -518,7 +519,8 @@ bool OnOffServer::OnWithTimedOffCommand(const app::ConcreteCommandPath & command
 
     if (currentOnTime < MAX_TIME_VALUE && currentOffWaitTime < MAX_TIME_VALUE)
     {
-        emberEventControlSetDelayMS(configureEventControl(endpoint), UPDATE_TIME_MS);
+        nextDesiredOnWithTimedOffTimestamp = chip::System::SystemClock().GetMonotonicTimestamp() + UPDATE_TIME_MS;
+        emberEventControlSetDelayMS(configureEventControl(endpoint), (uint32_t) UPDATE_TIME_MS.count());
     }
 
 exit:
@@ -541,7 +543,7 @@ void OnOffServer::updateOnOffTimeCommand(chip::EndpointId endpoint)
     if (isOn) // OnOff On case
     {
         // Restart Timer
-        emberEventControlSetDelayMS(configureEventControl(endpoint), UPDATE_TIME_MS);
+        emberEventControlSetDelayMS(configureEventControl(endpoint), calculateNextWaitTimeMS());
 
         // Update onTime values
         uint16_t onTime = MIN_TIME_VALUE;
@@ -580,7 +582,7 @@ void OnOffServer::updateOnOffTimeCommand(chip::EndpointId endpoint)
         if (offWaitTime > 0)
         {
             // Restart Timer
-            emberEventControlSetDelayMS(configureEventControl(endpoint), UPDATE_TIME_MS);
+            emberEventControlSetDelayMS(configureEventControl(endpoint), calculateNextWaitTimeMS());
         }
         else
         {
@@ -595,12 +597,8 @@ void OnOffServer::updateOnOffTimeCommand(chip::EndpointId endpoint)
 #ifndef IGNORE_ON_OFF_CLUSTER_START_UP_ON_OFF
 bool OnOffServer::areStartUpOnOffServerAttributesNonVolatile(EndpointId endpoint)
 {
-    if (emberAfIsNonVolatileAttribute(endpoint, OnOff::Id, Attributes::OnOff::Id))
-    {
-        return emberAfIsNonVolatileAttribute(endpoint, OnOff::Id, Attributes::StartUpOnOff::Id);
-    }
-
-    return false;
+    return !emberAfIsKnownVolatileAttribute(endpoint, OnOff::Id, Attributes::OnOff::Id) &&
+        !emberAfIsKnownVolatileAttribute(endpoint, OnOff::Id, Attributes::StartUpOnOff::Id);
 }
 #endif // IGNORE_ON_OFF_CLUSTER_START_UP_ON_OFF
 

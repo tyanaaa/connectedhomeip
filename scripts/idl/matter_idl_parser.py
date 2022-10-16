@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import enum
+import functools
 import logging
 
 from lark import Lark
@@ -13,6 +15,12 @@ except:
     sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
     from matter_idl_types import *
+
+
+def UnionOfAllFlags(flags_list):
+    if not flags_list:
+        return None
+    return functools.reduce(lambda a, b: a | b, flags_list)
 
 
 class AddServerClusterToEndpointTransform:
@@ -148,16 +156,28 @@ class MatterIdlTransformer(Transformer):
         return Field(data_type=data_type, name=name, code=code, is_list=is_list)
 
     def optional(self, _):
-        return FieldAttribute.OPTIONAL
+        return FieldQuality.OPTIONAL
 
     def nullable(self, _):
-        return FieldAttribute.NULLABLE
+        return FieldQuality.NULLABLE
+
+    def fabric_sensitive(self, _):
+        return FieldQuality.FABRIC_SENSITIVE
 
     def attr_readonly(self, _):
-        return AttributeTag.READABLE
+        return AttributeQuality.READABLE
 
     def attr_nosubscribe(self, _):
-        return AttributeTag.NOSUBSCRIBE
+        return AttributeQuality.NOSUBSCRIBE
+
+    def attribute_qualities(self, qualities):
+        return UnionOfAllFlags(qualities) or AttributeQuality.NONE
+
+    def struct_fabric_scoped(self, _):
+        return StructQuality.FABRIC_SCOPED
+
+    def struct_qualities(self, qualities):
+        return UnionOfAllFlags(qualities) or StructQuality.NONE
 
     def critical_priority(self, _):
         return EventPriority.CRITICAL
@@ -168,18 +188,26 @@ class MatterIdlTransformer(Transformer):
     def debug_priority(self, _):
         return EventPriority.DEBUG
 
-    def timed_command(self, _):
-        return CommandAttribute.TIMED_INVOKE
+    def event_fabric_sensitive(self, _):
+        return EventQuality.FABRIC_SENSITIVE
 
-    def command_attributes(self, attrs):
-        # List because attrs is a tuple
-        return set(list(attrs))
+    def event_qualities(selt, qualities):
+        return UnionOfAllFlags(qualities) or EventQuality.NONE
+
+    def timed_command(self, _):
+        return CommandQuality.TIMED_INVOKE
+
+    def fabric_scoped_command(self, _):
+        return CommandQuality.FABRIC_SCOPED
+
+    def command_qualities(self, attrs):
+        return UnionOfAllFlags(attrs) or CommandQuality.NONE
 
     def struct_field(self, args):
         # Last argument is the named_member, the rest
-        # are attributes
+        # are qualities
         field = args[-1]
-        field.attributes = set(args[:-1])
+        field.qualities = UnionOfAllFlags(args[:-1]) or FieldQuality.NONE
         return field
 
     def server_cluster(self, _):
@@ -204,14 +232,16 @@ class MatterIdlTransformer(Transformer):
         return init_args
 
     def command(self, args):
-        # A command has 4 arguments if no input or
-        # 5 arguments if input parameter is available
-        param_in = None
-        if len(args) > 4:
-            param_in = args[2]
+        # The command takes 4 arguments if no input argument, 5 if input
+        # argument is provided
+        if len(args) != 5:
+            args.insert(2, None)
 
         return Command(
-            attributes=args[0], input_param=param_in, output_param=args[-2], code=args[-1], **args[1])
+            qualities=args[0],
+            input_param=args[2], output_param=args[3], code=args[4],
+            **args[1]
+        )
 
     def event_access(self, privilege):
         return privilege[0]
@@ -229,7 +259,7 @@ class MatterIdlTransformer(Transformer):
         return init_args
 
     def event(self, args):
-        return Event(priority=args[0], code=args[2], fields=args[3:], **args[1])
+        return Event(qualities=args[0], priority=args[1], code=args[3], fields=args[4:], **args[2])
 
     def view_privilege(self, args):
         return AccessPrivilege.VIEW
@@ -291,22 +321,22 @@ class MatterIdlTransformer(Transformer):
         # handle escapes, skip the start and end quotes
         return s.value[1:-1].encode('utf-8').decode('unicode-escape')
 
-    def attribute(self, args):
-        tags = set(args[:-1])
-        (definition, acl) = args[-1]
+    @v_args(inline=True)
+    def attribute(self, qualities, definition_tuple):
+        (definition, acl) = definition_tuple
 
         # until we support write only (and need a bit of a reshuffle)
         # if the 'attr_readonly == READABLE' is not in the list, we make things
         # read/write
-        if AttributeTag.READABLE not in tags:
-            tags.add(AttributeTag.READABLE)
-            tags.add(AttributeTag.WRITABLE)
+        if AttributeQuality.READABLE not in qualities:
+            qualities |= AttributeQuality.READABLE
+            qualities |= AttributeQuality.WRITABLE
 
-        return Attribute(definition=definition, tags=tags, **acl)
+        return Attribute(definition=definition, qualities=qualities, **acl)
 
     @v_args(inline=True)
-    def struct(self, id, *fields):
-        return Struct(name=id, fields=list(fields))
+    def struct(self, qualities, id, *fields):
+        return Struct(name=id, qualities=qualities, fields=list(fields))
 
     @v_args(inline=True)
     def request_struct(self, value):
@@ -396,6 +426,12 @@ def CreateParser(skip_meta: bool = False):
     """
     Generates a parser that will process a ".matter" file into a IDL
     """
+
+    # NOTE: LALR parser is fast. While Earley could parse more ambigous grammars,
+    #       earley is much slower:
+    #    - 0.39s LALR parsing of all-clusters-app.matter
+    #    - 2.26s Earley parsing of the same thing.
+    # For this reason, every attempt should be made to make the grammar context free
     return ParserWithLines(Lark.open('matter_grammar.lark', rel_to=__file__, start='idl', parser='lalr', propagate_positions=True), skip_meta)
 
 

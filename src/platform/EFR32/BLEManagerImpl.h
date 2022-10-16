@@ -42,6 +42,22 @@ using namespace chip::Ble;
  */
 class BLEManagerImpl final : public BLEManager, private BleLayer, private BlePlatformDelegate, private BleApplicationDelegate
 {
+
+public:
+    void HandleBootEvent(void);
+    void HandleConnectEvent(volatile sl_bt_msg_t * evt);
+    void HandleConnectionCloseEvent(volatile sl_bt_msg_t * evt);
+    void HandleWriteEvent(volatile sl_bt_msg_t * evt);
+    void UpdateMtu(volatile sl_bt_msg_t * evt);
+    void HandleTxConfirmationEvent(BLE_CONNECTION_OBJECT conId);
+    void HandleTXCharCCCDWrite(volatile sl_bt_msg_t * evt);
+    void HandleSoftTimerEvent(volatile sl_bt_msg_t * evt);
+
+#if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
+    static void HandleC3ReadRequest(volatile sl_bt_msg_t * evt);
+#endif
+
+private:
     // Allow the BLEManager interface class to delegate method calls to
     // the implementation methods provided by this class.
     friend BLEManager;
@@ -49,9 +65,7 @@ class BLEManagerImpl final : public BLEManager, private BleLayer, private BlePla
     // ===== Members that implement the BLEManager internal interface.
 
     CHIP_ERROR _Init(void);
-    CHIP_ERROR _Shutdown() { return CHIP_NO_ERROR; }
-    CHIPoBLEServiceMode _GetCHIPoBLEServiceMode(void);
-    CHIP_ERROR _SetCHIPoBLEServiceMode(CHIPoBLEServiceMode val);
+    void _Shutdown() {}
     bool _IsAdvertisingEnabled(void);
     CHIP_ERROR _SetAdvertisingEnabled(bool val);
     bool _IsAdvertising(void);
@@ -127,30 +141,27 @@ class BLEManagerImpl final : public BLEManager, private BleLayer, private BlePla
     char mDeviceName[kMaxDeviceNameLength + 1];
     // The advertising set handle allocated from Bluetooth stack.
     uint8_t advertising_set_handle = 0xff;
+#if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
+    PacketBufferHandle c3AdditionalDataBufferHandle;
+#endif
 
     CHIP_ERROR MapBLEError(int bleErr);
     void DriveBLEState(void);
     CHIP_ERROR ConfigureAdvertisingData(void);
     CHIP_ERROR StartAdvertising(void);
     CHIP_ERROR StopAdvertising(void);
-    void UpdateMtu(volatile sl_bt_msg_t * evt);
-    void HandleBootEvent(void);
-    void HandleConnectEvent(volatile sl_bt_msg_t * evt);
-    void HandleConnectionCloseEvent(volatile sl_bt_msg_t * evt);
-    void HandleWriteEvent(volatile sl_bt_msg_t * evt);
-    void HandleTXCharCCCDWrite(volatile sl_bt_msg_t * evt);
+#if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
+    CHIP_ERROR EncodeAdditionalDataTlv();
+#endif
     void HandleRXCharWrite(volatile sl_bt_msg_t * evt);
-    void HandleTxConfirmationEvent(BLE_CONNECTION_OBJECT conId);
-    void HandleSoftTimerEvent(volatile sl_bt_msg_t * evt);
     bool RemoveConnection(uint8_t connectionHandle);
     void AddConnection(uint8_t connectionHandle, uint8_t bondingHandle);
     void StartBleAdvTimeoutTimer(uint32_t aTimeoutInMs);
     void CancelBleAdvTimeoutTimer(void);
     CHIPoBLEConState * GetConnectionState(uint8_t conId, bool allocate = false);
-    uint8_t GetTimerHandle(uint8_t connectionHandle, bool allocate = false);
     static void DriveBLEState(intptr_t arg);
-    static void bluetoothStackEventHandler(void * p_arg);
     static void BleAdvTimeoutHandler(TimerHandle_t xTimer);
+    uint8_t GetTimerHandle(uint8_t connectionHandle, bool allocate);
 };
 
 /**
@@ -178,11 +189,6 @@ inline BLEManagerImpl & BLEMgrImpl(void)
 inline BleLayer * BLEManagerImpl::_GetBleLayer()
 {
     return this;
-}
-
-inline BLEManager::CHIPoBLEServiceMode BLEManagerImpl::_GetCHIPoBLEServiceMode(void)
-{
-    return mServiceMode;
 }
 
 inline bool BLEManagerImpl::_IsAdvertisingEnabled(void)

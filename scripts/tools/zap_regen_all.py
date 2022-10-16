@@ -71,7 +71,10 @@ class ZAPGenerateTarget:
             with open(af_gen_event, "w+"):  # Empty file needed for linux
                 pass
             idl_path = self.zap_config.replace(".zap", ".matter")
-            target_path = os.path.join(self.output_dir, os.path.basename(idl_path))
+            target_path = os.path.join("examples",
+                                       "chef",
+                                       "devices",
+                                       os.path.basename(idl_path))
             os.rename(idl_path, target_path)
 
 
@@ -90,7 +93,9 @@ def setupArgumentsParser():
     parser.add_argument('--tests', default='all', choices=['all', 'chip-tool', 'darwin-framework-tool', 'app1', 'app2'],
                         help='When generating tests only target, Choose which tests to generate (default: all)')
     parser.add_argument('--dry-run', default=False, action='store_true',
-                        help="Don't do any generationl just log what targets would be generated (default: False)")
+                        help="Don't do any generation, just log what targets would be generated (default: False)")
+    parser.add_argument('--run-bootstrap', default=None, action='store_true',
+                        help='Automatically run ZAP bootstrap. By default the bootstrap is not triggered')
     return parser.parse_args()
 
 
@@ -221,6 +226,10 @@ def getTargets(type, test_target):
     return targets
 
 
+def runBootstrap():
+    subprocess.check_call(os.path.join(CHIP_ROOT_DIR, "scripts/tools/zap/zap_bootstrap.sh"), shell=True)
+
+
 def main():
     logging.basicConfig(
         level=logging.INFO,
@@ -233,6 +242,8 @@ def main():
     targets = getTargets(args.type, args.tests)
 
     if (not args.dry_run):
+        if (args.run_bootstrap):
+            runBootstrap()
         for target in targets:
             target.generate()
 

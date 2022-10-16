@@ -32,8 +32,8 @@
 #include <platform/Zephyr/DiagnosticDataProviderImpl.h>
 #include <platform/internal/GenericPlatformManagerImpl_Zephyr.ipp>
 
-#include <drivers/entropy.h>
 #include <malloc.h>
+#include <zephyr/drivers/entropy.h>
 
 namespace chip {
 namespace DeviceLayer {
@@ -106,8 +106,6 @@ CHIP_ERROR PlatformManagerImpl::_InitChipStack(void)
     // Initialize the configuration system.
     err = Internal::ZephyrConfig::Init();
     SuccessOrExit(err);
-    SetConfigurationMgr(&ConfigurationManagerImpl::GetDefaultInstance());
-    SetDiagnosticDataProvider(&DiagnosticDataProviderImpl::GetDefaultInstance());
 
 #if !CONFIG_NORDIC_SECURITY_BACKEND
     // Add entropy source based on Zephyr entropy driver

@@ -35,11 +35,15 @@
 #include <lwip/tcpip.h>
 #endif
 
+#if defined(MBEDTLS_USE_TINYCRYPT)
+#include "ecc.h"
+#endif
+
 #include <openthread/platform/entropy.h>
 
-#include "K32W061.h"
 #include "MemManager.h"
 #include "RNG_Interface.h"
+#include "SecLib.h"
 #include "TimersManager.h"
 #include "fsl_sha.h"
 #include "k32w0-chip-mbedtls-config.h"
@@ -48,6 +52,14 @@ namespace chip {
 namespace DeviceLayer {
 
 PlatformManagerImpl PlatformManagerImpl::sInstance;
+
+#if defined(cPWR_UsePowerDownMode) && (cPWR_UsePowerDownMode)
+extern "C" void InitLowPower();
+#endif
+
+#if defined(MBEDTLS_USE_TINYCRYPT)
+osaMutexId_t PlatformManagerImpl::rngMutexHandle = NULL;
+#endif
 
 CHIP_ERROR PlatformManagerImpl::InitBoardFwk(void)
 {
@@ -71,10 +83,17 @@ CHIP_ERROR PlatformManagerImpl::InitBoardFwk(void)
     }
     RNG_SetPseudoRandomNoSeed(NULL);
 
+    SecLib_Init();
+
     TMR_Init();
 
     /* Used for OT initializations */
     otSysInit(1, argv);
+
+#if defined(cPWR_UsePowerDownMode) && (cPWR_UsePowerDownMode)
+    /* Low Power Init */
+    InitLowPower();
+#endif
 
 exit:
     return err;
@@ -92,6 +111,18 @@ static int app_entropy_source(void * data, unsigned char * output, size_t len, s
     *olen = len;
     return 0;
 }
+
+#if defined(MBEDTLS_USE_TINYCRYPT)
+int PlatformManagerImpl::uECC_RNG_Function(uint8_t * dest, unsigned int size)
+{
+    int res;
+    OSA_MutexLock(rngMutexHandle, osaWaitForever_c);
+    res = (chip::Crypto::DRBG_get_bytes(dest, size) == CHIP_NO_ERROR) ? size : 0;
+    OSA_MutexUnlock(rngMutexHandle);
+
+    return res;
+}
+#endif
 
 CHIP_ERROR PlatformManagerImpl::_InitChipStack(void)
 {
@@ -112,7 +143,6 @@ CHIP_ERROR PlatformManagerImpl::_InitChipStack(void)
     }
 
     SetConfigurationMgr(&ConfigurationManagerImpl::GetDefaultInstance());
-    SetDiagnosticDataProvider(&DiagnosticDataProviderImpl::GetDefaultInstance());
 
     mStartTime = System::SystemClock().GetMonotonicTimestamp();
 
@@ -124,6 +154,13 @@ CHIP_ERROR PlatformManagerImpl::_InitChipStack(void)
     err = chip::Crypto::add_entropy_source(app_entropy_source, NULL, 16);
     SuccessOrExit(err);
 
+#if defined(MBEDTLS_USE_TINYCRYPT)
+    /* Set RNG function for tinycrypt operations. */
+    rngMutexHandle = OSA_MutexCreate();
+    VerifyOrExit((NULL != rngMutexHandle), err = CHIP_ERROR_NO_MEMORY);
+    uECC_set_rng(PlatformManagerImpl::uECC_RNG_Function);
+#endif
+
     // Call _InitChipStack() on the generic implementation base class
     // to finish the initialization process.
     err = Internal::GenericPlatformManagerImpl_FreeRTOS<PlatformManagerImpl>::_InitChipStack();
@@ -133,7 +170,7 @@ exit:
     return err;
 }
 
-CHIP_ERROR PlatformManagerImpl::_Shutdown()
+void PlatformManagerImpl::_Shutdown()
 {
     uint64_t upTime = 0;
 
@@ -155,7 +192,7 @@ CHIP_ERROR PlatformManagerImpl::_Shutdown()
         ChipLogError(DeviceLayer, "Failed to get current uptime since the Node’s last reboot");
     }
 
-    return Internal::GenericPlatformManagerImpl_FreeRTOS<PlatformManagerImpl>::_Shutdown();
+    Internal::GenericPlatformManagerImpl_FreeRTOS<PlatformManagerImpl>::_Shutdown();
 }
 
 } // namespace DeviceLayer

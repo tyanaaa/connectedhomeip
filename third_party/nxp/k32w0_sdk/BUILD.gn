@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//build_overrides/chip.gni")
 import("//build_overrides/k32w0_sdk.gni")
 import("//build_overrides/mbedtls.gni")
 
@@ -27,6 +28,13 @@ assert(k32w0_sdk_target != "", "k32w0_sdk_target must be specified")
 
 group("k32w0_sdk") {
   public_deps = [ k32w0_sdk_target ]
+}
+
+if (chip_crypto == "tinycrypt") {
+  assert(
+      mbedtls_repo ==
+          "//third_party/connectedhomeip/third_party/nxp/libs/mbedtls",
+      "mbedtls_repo must be set to nxp mbedtls-tinycrypt library when chip_crypto == \"tinycrypt\"")
 }
 
 config("mbedtls_k32w0_config") {
@@ -53,7 +61,14 @@ config("mbedtls_k32w0_config") {
     ]
   }
 
-  if (mbedtls_use_tinycrypt) {
+  if (chip_with_factory_data == 1) {
+    defines += [
+      "MBEDTLS_X509_CRT_PARSE_C",
+      "MBEDTLS_X509_USE_C",
+    ]
+  }
+
+  if (chip_crypto == "tinycrypt") {
     defines += [
       "MBEDTLS_USE_TINYCRYPT",
       "MBEDTLS_OPTIMIZE_TINYCRYPT_ASM",
@@ -62,18 +77,18 @@ config("mbedtls_k32w0_config") {
 
   include_dirs = [ chip_root ]
 
-  if (mbedtls_use_tinycrypt) {
+  if (chip_crypto == "tinycrypt") {
     include_dirs += [ "${mbedtls_repo}/repo/include/tinycrypt" ]
   }
 }
 
 mbedtls_target("mbedtls") {
   sources = [
+    "${chip_root}/src/platform/nxp/k32w/k32w0/crypto/ksdk_mbedtls.c",
     "${k32w0_sdk_root}/middleware/mbedtls/port/ksdk/aes_alt.c",
-    "${k32w0_sdk_root}/middleware/mbedtls/port/ksdk/ksdk_mbedtls.c",
   ]
 
-  if (mbedtls_use_tinycrypt) {
+  if (chip_crypto == "tinycrypt") {
     sources += [
       "${mbedtls_repo}/repo/tinycrypt/ecc.c",
       "${mbedtls_repo}/repo/tinycrypt/ecc_dh.c",

@@ -39,10 +39,7 @@ CHIP_ERROR ChipDnssdInit(DnssdAsyncReturnCallback initCallback, DnssdAsyncReturn
     return ThreadStackMgr().ClearSrpHost(hostname);
 }
 
-CHIP_ERROR ChipDnssdShutdown()
-{
-    return CHIP_NO_ERROR;
-}
+void ChipDnssdShutdown() {}
 
 const char * GetProtocolString(DnssdServiceProtocol protocol)
 {
@@ -89,7 +86,7 @@ CHIP_ERROR ChipDnssdFinalizeServiceUpdate()
 }
 
 CHIP_ERROR ChipDnssdBrowse(const char * type, DnssdServiceProtocol protocol, Inet::IPAddressType addressType,
-                           Inet::InterfaceId interface, DnssdBrowseCallback callback, void * context)
+                           Inet::InterfaceId interface, DnssdBrowseCallback callback, void * context, intptr_t * browseIdentifier)
 {
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD_SRP_CLIENT && CHIP_DEVICE_CONFIG_ENABLE_THREAD_DNS_CLIENT
     if (type == nullptr || callback == nullptr)
@@ -98,10 +95,16 @@ CHIP_ERROR ChipDnssdBrowse(const char * type, DnssdServiceProtocol protocol, Ine
     char serviceType[Dnssd::kDnssdFullTypeAndProtocolMaxSize + 1]; // +1 for null-terminator
     snprintf(serviceType, sizeof(serviceType), "%s.%s", type, GetProtocolString(protocol));
 
+    *browseIdentifier = reinterpret_cast<intptr_t>(nullptr);
     return ThreadStackMgr().DnsBrowse(serviceType, callback, context);
 #else
     return CHIP_ERROR_NOT_IMPLEMENTED;
 #endif // CHIP_DEVICE_CONFIG_ENABLE_THREAD_SRP_CLIENT && CHIP_DEVICE_CONFIG_ENABLE_THREAD_DNS_CLIENT
+}
+
+CHIP_ERROR ChipDnssdStopBrowse(intptr_t browseIdentifier)
+{
+    return CHIP_ERROR_NOT_IMPLEMENTED;
 }
 
 CHIP_ERROR ChipDnssdResolve(DnssdService * browseResult, Inet::InterfaceId interface, DnssdResolveCallback callback, void * context)

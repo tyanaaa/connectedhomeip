@@ -20,6 +20,8 @@
 #include <dns_sd.h>
 #include <lib/dnssd/platform/Dnssd.h>
 
+#include "DnssdHostNameRegistrar.h"
+
 #include <map>
 #include <string>
 #include <vector>
@@ -92,9 +94,11 @@ struct RegisterContext : public GenericContext
 {
     DnssdPublishCallback callback;
     std::string mType;
+    std::string mInstanceName;
+    HostNameRegistrar mHostNameRegistrar;
 
-    RegisterContext(const char * sType, DnssdPublishCallback cb, void * cbContext);
-    virtual ~RegisterContext() {}
+    RegisterContext(const char * sType, const char * instanceName, DnssdPublishCallback cb, void * cbContext);
+    virtual ~RegisterContext() { mHostNameRegistrar.Unregister(); }
 
     void DispatchFailure(DNSServiceErrorType err) override;
     void DispatchSuccess() override;
@@ -113,10 +117,20 @@ struct BrowseContext : public GenericContext
 
     void DispatchFailure(DNSServiceErrorType err) override;
     void DispatchSuccess() override;
+
+    // Dispatch what we have found so far, but don't stop browsing.
+    void DispatchPartialSuccess();
 };
 
 struct InterfaceInfo
 {
+    InterfaceInfo();
+    InterfaceInfo(InterfaceInfo && other);
+    // Copying is not safe, because DnssdService bits need to be
+    // copied/deallocated properly.
+    InterfaceInfo(const InterfaceInfo & other) = delete;
+    ~InterfaceInfo();
+
     DnssdService service;
     std::vector<Inet::IPAddress> addresses;
     std::string fullyQualifiedDomainName;
@@ -141,7 +155,6 @@ struct ResolveContext : public GenericContext
     void OnNewInterface(uint32_t interfaceId, const char * fullname, const char * hostname, uint16_t port, uint16_t txtLen,
                         const unsigned char * txtRecord);
     bool HasInterface();
-    void RemoveInterfaces();
 };
 
 } // namespace Dnssd

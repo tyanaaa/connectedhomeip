@@ -36,89 +36,75 @@ namespace chip {
 namespace DeviceLayer {
 namespace Internal {
 
-static ramBufferDescriptor * ramDescr;
+osaMutexId_t K32WConfig::pdmMutexHandle = NULL;
 
-constexpr uint16_t kNvmIdChipConfigData  = 0x5000;
-constexpr uint16_t kRamBufferInitialSize = 3072;
+#if CHIP_DEVICE_LAYER_ENABLE_PDM_LOGS
+static void PDM_SystemCallback(uint32_t number, PDM_eSystemEventCode code)
+{
+    uint8_t capacity  = PDM_u8GetSegmentCapacity();
+    uint8_t occupancy = PDM_u8GetSegmentOccupancy();
+    ChipLogProgress(DeviceLayer, "[PDM]Event (number, code): (%lu, %d)", number, code);
+    ChipLogProgress(DeviceLayer, "[PDM]Capacity: %hhu", capacity);
+    ChipLogProgress(DeviceLayer, "[PDM]Occupancy: %hhu", occupancy);
+}
+#endif
 
 CHIP_ERROR K32WConfig::Init()
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
-    int pdmStatus;
+    int status;
 
     /* Initialise the Persistent Data Manager */
-    pdmStatus = PDM_Init();
-    SuccessOrExit(err = MapPdmInitStatus(pdmStatus));
+    pdmMutexHandle = OSA_MutexCreate();
+    VerifyOrExit((NULL != pdmMutexHandle), err = CHIP_ERROR_NO_MEMORY);
+    status = PDM_Init();
+    SuccessOrExit(err = MapPdmInitStatusToChipError(status));
+#if CHIP_DEVICE_LAYER_ENABLE_PDM_LOGS
+    PDM_vRegisterSystemCallback(PDM_SystemCallback);
+#endif
 
-    ramDescr = getRamBuffer(kNvmIdChipConfigData, kRamBufferInitialSize);
-    if (!ramDescr)
+    err = RamStorage::Init(kNvmIdChipConfigData, kRamBufferInitialSize);
+
+exit:
+    if (err != CHIP_NO_ERROR)
     {
-        err = CHIP_ERROR_NO_MEMORY;
+        if (pdmMutexHandle)
+        {
+            OSA_MutexDestroy(pdmMutexHandle);
+        }
+
+        RamStorage::FreeBuffer();
     }
-
-exit:
     return err;
 }
 
-CHIP_ERROR K32WConfig::ReadConfigValue(Key key, bool & val)
+void K32WConfig::MutexLock(osaMutexId_t mutexId, uint32_t millisec)
 {
-    CHIP_ERROR err;
-    bool tempVal;
-    rsError status;
-    uint16_t sizeToRead = sizeof(tempVal);
-
-    VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
-    status = ramStorageGet(ramDescr, key, 0, (uint8_t *) &tempVal, &sizeToRead);
-    SuccessOrExit(err = MapRamStorageStatus(status));
-    val = tempVal;
-
-exit:
-    return err;
+    osaStatus_t status = OSA_MutexLock(mutexId, millisec);
+    if (osaStatus_Success != status)
+    {
+        ChipLogProgress(DeviceLayer, "OSA mutex lock failed.");
+    }
 }
 
-CHIP_ERROR K32WConfig::ReadConfigValue(Key key, uint32_t & val)
+void K32WConfig::MutexUnlock(osaMutexId_t mutexId)
 {
-    CHIP_ERROR err;
-    uint32_t tempVal;
-    rsError status;
-    uint16_t sizeToRead = sizeof(tempVal);
-
-    VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
-    status = ramStorageGet(ramDescr, key, 0, (uint8_t *) &tempVal, &sizeToRead);
-    SuccessOrExit(err = MapRamStorageStatus(status));
-    val = tempVal;
-
-exit:
-    return err;
-}
-
-CHIP_ERROR K32WConfig::ReadConfigValue(Key key, uint64_t & val)
-{
-    CHIP_ERROR err;
-    uint32_t tempVal;
-    rsError status;
-    uint16_t sizeToRead = sizeof(tempVal);
-
-    VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
-    status = ramStorageGet(ramDescr, key, 0, (uint8_t *) &tempVal, &sizeToRead);
-    SuccessOrExit(err = MapRamStorageStatus(status));
-    val = tempVal;
-
-exit:
-    return err;
+    osaStatus_t status = OSA_MutexUnlock(mutexId);
+    if (osaStatus_Success != status)
+    {
+        ChipLogProgress(DeviceLayer, "OSA mutex unlock failed.");
+    }
 }
 
 CHIP_ERROR K32WConfig::ReadConfigValueStr(Key key, char * buf, size_t bufSize, size_t & outLen)
 {
     CHIP_ERROR err;
-    rsError status;
     uint16_t sizeToRead = bufSize;
 
-    VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
+    VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND);
+    err = RamStorage::Read(key, 0, (uint8_t *) buf, &sizeToRead);
+    SuccessOrExit(err);
 
-    // We can call ramStorageGet with null pointer to only retrieve the size
-    status = ramStorageGet(ramDescr, key, 0, (uint8_t *) buf, &sizeToRead);
-    SuccessOrExit(err = MapRamStorageStatus(status));
     outLen = sizeToRead;
 
 exit:
@@ -136,59 +122,6 @@ CHIP_ERROR K32WConfig::ReadConfigValueCounter(uint8_t counterIdx, uint32_t & val
     return ReadConfigValue(key, val);
 }
 
-CHIP_ERROR K32WConfig::WriteConfigValue(Key key, bool val)
-{
-    CHIP_ERROR err;
-    rsError status;
-    PDM_teStatus pdmStatus;
-
-    VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
-    status = ramStorageSet(&ramDescr, key, (uint8_t *) &val, sizeof(bool));
-    SuccessOrExit(err = MapRamStorageStatus(status));
-
-    pdmStatus =
-        PDM_eSaveRecordDataInIdleTask((uint16_t) kNvmIdChipConfigData, ramDescr, ramDescr->ramBufferLen + kRamDescHeaderSize);
-    SuccessOrExit(err = MapPdmStatus(pdmStatus));
-exit:
-    return err;
-}
-
-CHIP_ERROR K32WConfig::WriteConfigValue(Key key, uint32_t val)
-{
-    CHIP_ERROR err;
-    rsError status;
-    PDM_teStatus pdmStatus;
-
-    VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
-    status = ramStorageSet(&ramDescr, key, (uint8_t *) &val, sizeof(uint32_t));
-    SuccessOrExit(err = MapRamStorageStatus(status));
-
-    pdmStatus =
-        PDM_eSaveRecordDataInIdleTask((uint16_t) kNvmIdChipConfigData, ramDescr, ramDescr->ramBufferLen + kRamDescHeaderSize);
-    SuccessOrExit(err = MapPdmStatus(pdmStatus));
-
-exit:
-    return err;
-}
-
-CHIP_ERROR K32WConfig::WriteConfigValue(Key key, uint64_t val)
-{
-    CHIP_ERROR err;
-    rsError status;
-    PDM_teStatus pdmStatus;
-
-    VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
-    status = ramStorageSet(&ramDescr, key, (uint8_t *) &val, sizeof(uint64_t));
-    SuccessOrExit(err = MapRamStorageStatus(status));
-
-    pdmStatus =
-        PDM_eSaveRecordDataInIdleTask((uint16_t) kNvmIdChipConfigData, ramDescr, ramDescr->ramBufferLen + kRamDescHeaderSize);
-    SuccessOrExit(err = MapPdmStatus(pdmStatus));
-
-exit:
-    return err;
-}
-
 CHIP_ERROR K32WConfig::WriteConfigValueStr(Key key, const char * str)
 {
     return WriteConfigValueStr(key, str, (str != NULL) ? strlen(str) : 0);
@@ -197,27 +130,26 @@ CHIP_ERROR K32WConfig::WriteConfigValueStr(Key key, const char * str)
 CHIP_ERROR K32WConfig::WriteConfigValueStr(Key key, const char * str, size_t strLen)
 {
     CHIP_ERROR err;
-    PDM_teStatus pdmStatus;
-    rsError status;
+    PDM_teStatus status;
+    RamStorage::Buffer buffer;
 
-    VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
+    MutexLock(pdmMutexHandle, osaWaitForever_c);
+    VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND);
 
-    if (str != NULL)
+    if (!str)
     {
-        status = ramStorageSet(&ramDescr, key, (uint8_t *) str, strLen);
-        SuccessOrExit(err = MapRamStorageStatus(status));
-
-        pdmStatus =
-            PDM_eSaveRecordDataInIdleTask((uint16_t) kNvmIdChipConfigData, ramDescr, ramDescr->ramBufferLen + kRamDescHeaderSize);
-        SuccessOrExit(err = MapPdmStatus(pdmStatus));
+        err = RamStorage::Delete(key, -1);
     }
     else
     {
-        err = ClearConfigValue(key);
+        err = RamStorage::Write(key, (uint8_t *) str, strLen);
         SuccessOrExit(err);
+        buffer = RamStorage::GetBuffer();
+        status = PDM_eSaveRecordDataInIdleTask(kNvmIdChipConfigData, buffer, buffer->ramBufferLen + kRamDescHeaderSize);
     }
 
 exit:
+    MutexUnlock(pdmMutexHandle);
     return err;
 }
 
@@ -235,48 +167,57 @@ CHIP_ERROR K32WConfig::WriteConfigValueCounter(uint8_t counterIdx, uint32_t val)
 CHIP_ERROR K32WConfig::ClearConfigValue(Key key)
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
-    rsError status;
-    PDM_teStatus pdmStatus;
+    PDM_teStatus status;
+    RamStorage::Buffer buffer;
 
+    MutexLock(pdmMutexHandle, osaWaitForever_c);
     VerifyOrExit(ValidConfigKey(key), err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND); // Verify key id.
-    status = ramStorageDelete(ramDescr, key, 0);
-    SuccessOrExit(err = MapRamStorageStatus(status));
+    err = RamStorage::Delete(key, -1);
+    SuccessOrExit(err);
 
-    pdmStatus =
-        PDM_eSaveRecordDataInIdleTask((uint16_t) kNvmIdChipConfigData, ramDescr, ramDescr->ramBufferLen + kRamDescHeaderSize);
-    SuccessOrExit(err = MapPdmStatus(pdmStatus));
+    buffer = RamStorage::GetBuffer();
+    status = PDM_eSaveRecordDataInIdleTask(kNvmIdChipConfigData, buffer, buffer->ramBufferLen + kRamDescHeaderSize);
+    SuccessOrExit(err = MapPdmStatusToChipError(status));
 
 exit:
+    MutexUnlock(pdmMutexHandle);
     return err;
 }
 
 bool K32WConfig::ConfigValueExists(Key key)
 {
-    rsError status;
+    CHIP_ERROR err;
     uint16_t sizeToRead;
     bool found = false;
 
     if (ValidConfigKey(key))
     {
-        status = ramStorageGet(ramDescr, key, 0, NULL, &sizeToRead);
-        found  = (status == RS_ERROR_NONE && sizeToRead != 0);
+        err   = RamStorage::Read(key, 0, NULL, &sizeToRead);
+        found = (err == CHIP_NO_ERROR && sizeToRead != 0);
     }
+
     return found;
 }
 
 CHIP_ERROR K32WConfig::FactoryResetConfig(void)
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
-    PDM_teStatus pdmStatus;
+    PDM_teStatus status;
+    RamStorage::Buffer buffer;
 
+    MutexLock(pdmMutexHandle, osaWaitForever_c);
+    FactoryResetConfigInternal(kMinConfigKey_ChipCounter, kMaxConfigKey_ChipCounter);
     FactoryResetConfigInternal(kMinConfigKey_ChipConfig, kMaxConfigKey_ChipConfig);
     FactoryResetConfigInternal(kMinConfigKey_KVSKey, kMaxConfigKey_KVSKey);
     FactoryResetConfigInternal(kMinConfigKey_KVSValue, kMaxConfigKey_KVSValue);
 
-    pdmStatus = PDM_eSaveRecordData((uint16_t) kNvmIdChipConfigData, ramDescr, ramDescr->ramBufferLen + kRamDescHeaderSize);
-    SuccessOrExit(err = MapPdmStatus(pdmStatus));
+    buffer = RamStorage::GetBuffer();
+    status = PDM_eSaveRecordData(kNvmIdChipConfigData, buffer, buffer->ramBufferLen + kRamDescHeaderSize);
+    SuccessOrExit(err = MapPdmStatusToChipError(status));
 
 exit:
+    RamStorage::FreeBuffer();
+    MutexUnlock(pdmMutexHandle);
     return err;
 }
 
@@ -284,50 +225,30 @@ void K32WConfig::FactoryResetConfigInternal(Key firstKey, Key lastKey)
 {
     for (Key key = firstKey; key <= lastKey; key++)
     {
-        ramStorageDelete(ramDescr, key, 0);
+        RamStorage::Delete(key, -1);
     }
 }
 
-CHIP_ERROR K32WConfig::MapPdmStatus(PDM_teStatus pdmStatus)
+CHIP_ERROR K32WConfig::MapPdmStatusToChipError(PDM_teStatus status)
 {
     CHIP_ERROR err;
 
-    switch (pdmStatus)
+    switch (status)
     {
     case PDM_E_STATUS_OK:
         err = CHIP_NO_ERROR;
         break;
     default:
-        err = CHIP_ERROR(ChipError::Range::kPlatform, pdmStatus);
+        err = CHIP_ERROR(ChipError::Range::kPlatform, status);
         break;
     }
 
     return err;
 }
 
-CHIP_ERROR K32WConfig::MapRamStorageStatus(rsError rsStatus)
+CHIP_ERROR K32WConfig::MapPdmInitStatusToChipError(int status)
 {
-    CHIP_ERROR err;
-
-    switch (rsStatus)
-    {
-    case RS_ERROR_NONE:
-        err = CHIP_NO_ERROR;
-        break;
-    case RS_ERROR_NOT_FOUND:
-        err = CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND;
-        break;
-    default:
-        err = CHIP_ERROR_BUFFER_TOO_SMALL;
-        break;
-    }
-
-    return err;
-}
-
-CHIP_ERROR K32WConfig::MapPdmInitStatus(int pdmStatus)
-{
-    return (pdmStatus == 0) ? CHIP_NO_ERROR : CHIP_ERROR(ChipError::Range::kPlatform, pdmStatus);
+    return (status == 0) ? CHIP_NO_ERROR : CHIP_ERROR(ChipError::Range::kPlatform, status);
 }
 
 bool K32WConfig::ValidConfigKey(Key key)

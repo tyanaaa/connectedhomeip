@@ -61,7 +61,7 @@ CHIP_ERROR GenericPlatformManagerImpl<ImplClass>::_InitChipStack()
     err = InitEntropy();
     if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(DeviceLayer, "Entropy initialization failed: %s", ErrorStr(err));
+        ChipLogError(DeviceLayer, "Entropy initialization failed: %" CHIP_ERROR_FORMAT, err.Format());
     }
     SuccessOrExit(err);
 
@@ -69,7 +69,7 @@ CHIP_ERROR GenericPlatformManagerImpl<ImplClass>::_InitChipStack()
     err = SystemLayer().Init();
     if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(DeviceLayer, "SystemLayer initialization failed: %s", ErrorStr(err));
+        ChipLogError(DeviceLayer, "SystemLayer initialization failed: %" CHIP_ERROR_FORMAT, err.Format());
     }
     SuccessOrExit(err);
 
@@ -77,7 +77,7 @@ CHIP_ERROR GenericPlatformManagerImpl<ImplClass>::_InitChipStack()
     err = ConfigurationMgr().Init();
     if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(DeviceLayer, "Configuration Manager initialization failed: %s", ErrorStr(err));
+        ChipLogError(DeviceLayer, "Configuration Manager initialization failed: %" CHIP_ERROR_FORMAT, err.Format());
     }
     SuccessOrExit(err);
 
@@ -85,7 +85,7 @@ CHIP_ERROR GenericPlatformManagerImpl<ImplClass>::_InitChipStack()
     err = UDPEndPointManager()->Init(SystemLayer());
     if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(DeviceLayer, "UDP initialization failed: %s", ErrorStr(err));
+        ChipLogError(DeviceLayer, "UDP initialization failed: %" CHIP_ERROR_FORMAT, err.Format());
     }
     SuccessOrExit(err);
 
@@ -96,7 +96,7 @@ CHIP_ERROR GenericPlatformManagerImpl<ImplClass>::_InitChipStack()
     err = BLEMgr().Init();
     if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(DeviceLayer, "BLEManager initialization failed: %s", ErrorStr(err));
+        ChipLogError(DeviceLayer, "BLEManager initialization failed: %" CHIP_ERROR_FORMAT, err.Format());
     }
     SuccessOrExit(err);
 #endif
@@ -105,14 +105,15 @@ CHIP_ERROR GenericPlatformManagerImpl<ImplClass>::_InitChipStack()
     err = ConnectivityMgr().Init();
     if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(DeviceLayer, "Connectivity Manager initialization failed: %s", ErrorStr(err));
+        ChipLogError(DeviceLayer, "Connectivity Manager initialization failed: %" CHIP_ERROR_FORMAT, err.Format());
     }
     SuccessOrExit(err);
 
     // Initialize the NFC Manager.
 #if CHIP_DEVICE_CONFIG_ENABLE_NFC
     err = NFCMgr().Init();
-    VerifyOrExit(err == CHIP_NO_ERROR, ChipLogError(DeviceLayer, "NFC Manager initialization failed: %s", ErrorStr(err)));
+    VerifyOrExit(err == CHIP_NO_ERROR,
+                 ChipLogError(DeviceLayer, "NFC Manager initialization failed: %" CHIP_ERROR_FORMAT, err.Format()));
 #endif
 
     // TODO Initialize CHIP Event Logging.
@@ -126,20 +127,18 @@ exit:
 }
 
 template <class ImplClass>
-CHIP_ERROR GenericPlatformManagerImpl<ImplClass>::_Shutdown()
+void GenericPlatformManagerImpl<ImplClass>::_Shutdown()
 {
     ChipLogError(DeviceLayer, "Inet Layer shutdown");
-    CHIP_ERROR err = UDPEndPointManager()->Shutdown();
+    UDPEndPointManager()->Shutdown();
 
 #if CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE
     ChipLogError(DeviceLayer, "BLE shutdown");
-    err = BLEMgr().Shutdown();
+    BLEMgr().Shutdown();
 #endif
 
     ChipLogError(DeviceLayer, "System Layer shutdown");
-    err = SystemLayer().Shutdown();
-
-    return err;
+    SystemLayer().Shutdown();
 }
 
 template <class ImplClass>
@@ -194,7 +193,7 @@ void GenericPlatformManagerImpl<ImplClass>::_RemoveEventHandler(PlatformManager:
 template <class ImplClass>
 void GenericPlatformManagerImpl<ImplClass>::_HandleServerStarted()
 {
-    PlatformManagerDelegate * platformManagerDelegate       = PlatformMgr().GetDelegate();
+    PlatformManagerDelegate * platformManagerDelegate = PlatformMgr().GetDelegate();
 
     if (platformManagerDelegate != nullptr)
     {
@@ -234,9 +233,9 @@ void GenericPlatformManagerImpl<ImplClass>::_ScheduleWork(AsyncWorkFunct workFun
 template <class ImplClass>
 void GenericPlatformManagerImpl<ImplClass>::_DispatchEvent(const ChipDeviceEvent * event)
 {
-#if CHIP_PROGRESS_LOGGING
+#if (CHIP_DISPATCH_EVENT_LONG_DISPATCH_TIME_WARNING_THRESHOLD_MS != 0)
     System::Clock::Timestamp start = System::SystemClock().GetMonotonicTimestamp();
-#endif // CHIP_PROGRESS_LOGGING
+#endif // CHIP_DISPATCH_EVENT_LONG_DISPATCH_TIME_WARNING_THRESHOLD_MS != 0
 
     switch (event->Type)
     {
@@ -267,14 +266,13 @@ void GenericPlatformManagerImpl<ImplClass>::_DispatchEvent(const ChipDeviceEvent
         break;
     }
 
-    // TODO: make this configurable
-#if CHIP_PROGRESS_LOGGING
+#if (CHIP_DISPATCH_EVENT_LONG_DISPATCH_TIME_WARNING_THRESHOLD_MS != 0)
     uint32_t deltaMs = System::Clock::Milliseconds32(System::SystemClock().GetMonotonicTimestamp() - start).count();
-    if (deltaMs > 100)
+    if (deltaMs > CHIP_DISPATCH_EVENT_LONG_DISPATCH_TIME_WARNING_THRESHOLD_MS)
     {
         ChipLogError(DeviceLayer, "Long dispatch time: %" PRIu32 " ms, for event type %d", deltaMs, event->Type);
     }
-#endif // CHIP_PROGRESS_LOGGING
+#endif // CHIP_DISPATCH_EVENT_LONG_DISPATCH_TIME_WARNING_THRESHOLD_MS != 0
 }
 
 template <class ImplClass>

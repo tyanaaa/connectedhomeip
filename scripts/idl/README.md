@@ -48,12 +48,14 @@ server cluster AccessControl = 31 {
     kGroup = 3;
   }
 
-  struct AccessControlEntry {
+  // structures may be fabric scoped by tagging them as 'fabric_scoped'
+  // in a fabric scoped structure, fields may be 'fabric_sensitive'
+  fabric_scoped struct AccessControlEntry {
     fabric_idx fabricIndex = 0;
-    Privilege privilege = 1;
-    AuthMode authMode = 2;
-    nullable INT64U subjects[] = 3;  // fields in structures may be lists and
-    nullable Target targets[] = 4;   // they may have attributes: nullable
+    fabric_sensitive Privilege privilege = 1;
+    fabric_sensitive AuthMode authMode = 2;
+    nullable fabric_sensitive INT64U subjects[] = 3;  // fields in structures may be lists and
+    nullable fabric_sensitive Target targets[] = 4;   // they may have attributes: nullable
   }
 
   // request structures are regular structures that are used
@@ -118,7 +120,13 @@ server cluster AccessControl = 31 {
   command access(invoke: administer) Off(): DefaultSuccess = 4;
 
   // command invocation can require timed invoke usage
-  timed command RequiresTimedInvok(): DefaultSuccess = 4;
+  timed command access(invoke: administer) RevokeCommissioning(): DefaultSuccess = 2;
+
+  // commands may be fabric scoped
+  fabric command ViewGroup(ViewGroupRequest): ViewGroupResponse = 1;
+
+  // commands may have multiple attributes
+  fabric timed command RequiresTimedInvoke(): DefaultSuccess = 7;
 }
 
 // A client cluster represents something that is used by an app

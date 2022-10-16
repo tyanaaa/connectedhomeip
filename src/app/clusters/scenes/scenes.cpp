@@ -15,29 +15,6 @@
  *    limitations under the License.
  */
 
-/**
- *
- *    Copyright (c) 2020 Silicon Labs
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
-/****************************************************************************
- * @file
- * @brief Routines for the Scenes plugin, which
- *implements the server side of the Scenes cluster.
- *******************************************************************************
- ******************************************************************************/
-
 #include "scenes.h"
 #include "app/util/common.h"
 #include <app-common/zap-generated/attribute-id.h>
@@ -809,7 +786,7 @@ bool emberAfPluginScenesServerParseAddScene(
     }
 
 #if defined(MATTER_CLUSTER_SCENE_NAME_SUPPORT) && MATTER_CLUSTER_SCENE_NAME_SUPPORT
-    emberAfCopyString(entry.name, sceneName, ZCL_SCENES_CLUSTER_MAXIMUM_NAME_LENGTH);
+    emberAfCopyString(entry.name, Uint8::from_const_char(sceneName.data()), ZCL_SCENES_CLUSTER_MAXIMUM_NAME_LENGTH);
 #endif
 
     // When adding a new scene, wipe out all of the extensions before parsing the

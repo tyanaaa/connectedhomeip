@@ -28,11 +28,13 @@
 #include <platform/Zephyr/DiagnosticDataProviderImpl.h>
 #include <platform/Zephyr/SysHeapMalloc.h>
 
-#include <drivers/hwinfo.h>
-#include <sys/util.h>
+#include <zephyr/drivers/hwinfo.h>
+#include <zephyr/sys/util.h>
 
-#ifdef CONFIG_MCUBOOT_IMG_MANAGER
-#include <dfu/mcuboot.h>
+#if CHIP_DEVICE_LAYER_TARGET_NRFCONNECT
+#include <platform/nrfconnect/Reboot.h>
+#elif defined(CONFIG_MCUBOOT_IMG_MANAGER)
+#include <zephyr/dfu/mcuboot.h>
 #endif
 
 #include <malloc.h>
@@ -88,7 +90,12 @@ BootReasonType DetermineBootReason()
 
     if (reason & RESET_SOFTWARE)
     {
-#ifdef CONFIG_MCUBOOT_IMG_MANAGER
+#if CHIP_DEVICE_LAYER_TARGET_NRFCONNECT
+        if (GetSoftwareRebootReason() == SoftwareRebootReason::kSoftwareUpdate)
+        {
+            return BootReasonType::kSoftwareUpdateCompleted;
+        }
+#elif defined(CONFIG_MCUBOOT_IMG_MANAGER)
         if (mcuboot_swap_type() == BOOT_SWAP_TYPE_REVERT)
         {
             return BootReasonType::kSoftwareUpdateCompleted;
@@ -319,6 +326,11 @@ void DiagnosticDataProviderImpl::ReleaseNetworkInterfaces(NetworkInterface * net
         netifp                 = netifp->Next;
         delete del;
     }
+}
+
+DiagnosticDataProvider & GetDiagnosticDataProviderImpl()
+{
+    return DiagnosticDataProviderImpl::GetDefaultInstance();
 }
 
 } // namespace DeviceLayer

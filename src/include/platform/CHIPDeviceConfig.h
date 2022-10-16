@@ -92,19 +92,6 @@
 #endif
 
 /**
- * CHIP_DEVICE_CONFIG_ENABLE_FACTORY_PROVISIONING
- *
- * Enable the device factory provisioning feature.
- *
- * The factory provisioning feature allows factory or developer-supplied provisioning information
- * to be injected into a device at boot time and automatically stored in persistent storage.
- */
-#ifndef CHIP_DEVICE_CONFIG_ENABLE_FACTORY_PROVISIONING
-// We don't have platform/internal/FactoryProvisioning.ipp for now, so set it to 0 by default.
-#define CHIP_DEVICE_CONFIG_ENABLE_FACTORY_PROVISIONING 0
-#endif
-
-/**
  * CHIP_DEVICE_CONFIG_LOG_PROVISIONING_HASH
  *
  * Compute and log a hash of the device's provisioning data on boot.
@@ -471,16 +458,6 @@
 #endif
 
 /**
- * CHIP_DEVICE_CONFIG_CHIPOBLE_DISABLE_ADVERTISING_WHEN_PROVISIONED
- *
- * Automatically disable CHIPoBLE advertising when the device transitions to a fully
- * provisioned state.
- */
-#ifndef CHIP_DEVICE_CONFIG_CHIPOBLE_DISABLE_ADVERTISING_WHEN_PROVISIONED
-#define CHIP_DEVICE_CONFIG_CHIPOBLE_DISABLE_ADVERTISING_WHEN_PROVISIONED 0
-#endif
-
-/**
  * CHIP_DEVICE_CONFIG_CHIPOBLE_ENABLE_ADVERTISING_AUTOSTART
  *
  * Enable CHIPoBLE advertising start automatically after device power-up.
@@ -582,18 +559,6 @@
  */
 #ifndef CHIP_DEVICE_CONFIG_BLE_ADVERTISING_INTERVAL_CHANGE_TIME
 #define CHIP_DEVICE_CONFIG_BLE_ADVERTISING_INTERVAL_CHANGE_TIME 30000
-#endif
-
-/**
- * CHIP_DEVICE_CONFIG_BLE_ADVERTISING_TIMEOUT
- *
- * The amount of time in miliseconds after which BLE advertisement should be disabled, counting
- * from the moment of advertisement commencement.
- *
- * Defaults to 9000000 (15 minutes).
- */
-#ifndef CHIP_DEVICE_CONFIG_BLE_ADVERTISING_TIMEOUT
-#define CHIP_DEVICE_CONFIG_BLE_ADVERTISING_TIMEOUT (15 * 60 * 1000)
 #endif
 
 // -------------------- Time Sync Configuration --------------------
@@ -826,19 +791,6 @@
 #define CHIP_DEVICE_CONFIG_ENABLE_THREAD_DNS_CLIENT 0
 #endif
 
-// -------------------- Trait Manager Configuration --------------------
-
-/**
- * CHIP_DEVICE_CONFIG_ENABLE_TRAIT_MANAGER
- *
- * Enable or disable the chip Trait Manager.
- *
- * NOTE: The Trait Manager is an experimental feature of the chip Device Layer.
- */
-#ifndef CHIP_DEVICE_CONFIG_ENABLE_TRAIT_MANAGER
-#define CHIP_DEVICE_CONFIG_ENABLE_TRAIT_MANAGER 0
-#endif
-
 // -------------------- Network Telemetry Configuration --------------------
 
 /**
@@ -985,7 +937,7 @@
 #error "Non-default Spake2+ salt configured but verifier left unchanged"
 #endif
 
-// Generated with: spake2p gen-verifier -o - -i 1000 -s "SPAKE2P Key Salt" -p 20202021
+// Generated with: spake2p gen-verifier -o - -i 1000 -s "U1BBS0UyUCBLZXkgU2FsdA==" -p 20202021
 #define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_VERIFIER                                                                               \
     "uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+NEkg0JVI5MGCQGMMT/SRPFNRODm3wH/MBiehuFc6FJ/"  \
     "NH6Rmzw=="
@@ -1016,21 +968,6 @@
 
 #if (CHIP_DEVICE_CONFIG_EVENT_LOGGING_CRIT_BUFFER_SIZE <= 0)
 #error "The Prod critical event buffer must exist (CHIP_DEVICE_CONFIG_EVENT_LOGGING_CRIT_BUFFER_SIZE > 0)"
-#endif
-
-/**
- * @def CHIP_DEVICE_CONFIG_EVENT_LOGGING_PROD_BUFFER_SIZE
- *
- * @brief
- *   A size, in bytes, of the individual production event logging buffer.
- *   Note: the production event buffer must exist.
- */
-#ifndef CHIP_DEVICE_CONFIG_EVENT_LOGGING_PROD_BUFFER_SIZE
-#define CHIP_DEVICE_CONFIG_EVENT_LOGGING_PROD_BUFFER_SIZE (512)
-#endif
-
-#if (CHIP_DEVICE_CONFIG_EVENT_LOGGING_PROD_BUFFER_SIZE <= 0)
-#error "The Prod event buffer must exist (CHIP_DEVICE_CONFIG_EVENT_LOGGING_PROD_BUFFER_SIZE > 0)"
 #endif
 
 /**
@@ -1403,4 +1340,14 @@
  */
 #ifndef CHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT
 #define CHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT 0
+#endif
+
+/**
+ * CHIP_DISPATCH_EVENT_LONG_DISPATCH_TIME_WARNING_THRESHOLD_MS
+ *
+ * Time threshold for events dispatching
+ * Set 0 to disable event dispatching time measurement
+ */
+#ifndef CHIP_DISPATCH_EVENT_LONG_DISPATCH_TIME_WARNING_THRESHOLD_MS
+#define CHIP_DISPATCH_EVENT_LONG_DISPATCH_TIME_WARNING_THRESHOLD_MS 100
 #endif

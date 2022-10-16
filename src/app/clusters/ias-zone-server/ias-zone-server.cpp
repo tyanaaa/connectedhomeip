@@ -15,41 +15,6 @@
  *    limitations under the License.
  */
 
-/**
- *
- *    Copyright (c) 2020 Silicon Labs
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
-/****************************************************************************
- * @file
- * @brief This is the source for the plugin used to
- *add an IAS Zone cluster server to a project.  This
- *source handles zone enrollment and storing of
- * attributes from a CIE device, and provides an API
- *for different plugins to post updated zone status
- *values.
- *******************************************************************************
- ******************************************************************************/
-
-// *****************************************************************************
-// * ias-zone-server.c
-// *
-// *
-// *
-// * Copyright 2015 Silicon Laboratories, Inc.                              *80*
-// *****************************************************************************
-
 #include "ias-zone-server.h"
 #include <app-common/zap-generated/att-storage.h>
 #include <app-common/zap-generated/attribute-id.h>
@@ -590,10 +555,10 @@ uint8_t emberAfPluginIasZoneServerGetZoneId(EndpointId endpoint)
 //------------------------------------------------------------------------------
 static bool areZoneServerAttributesNonVolatile(EndpointId endpoint)
 {
-    if (!emberAfIsNonVolatileAttribute(endpoint, IasZone::Id, Attributes::IasCieAddress::Id) ||
-        !emberAfIsNonVolatileAttribute(endpoint, IasZone::Id, Attributes::ZoneState::Id) ||
-        !emberAfIsNonVolatileAttribute(endpoint, IasZone::Id, Attributes::ZoneType::Id) ||
-        !emberAfIsNonVolatileAttribute(endpoint, IasZone::Id, Attributes::ZoneId::Id))
+    if (emberAfIsKnownVolatileAttribute(endpoint, IasZone::Id, Attributes::IasCieAddress::Id) ||
+        emberAfIsKnownVolatileAttribute(endpoint, IasZone::Id, Attributes::ZoneState::Id) ||
+        emberAfIsKnownVolatileAttribute(endpoint, IasZone::Id, Attributes::ZoneType::Id) ||
+        emberAfIsKnownVolatileAttribute(endpoint, IasZone::Id, Attributes::ZoneId::Id))
     {
         return false;
     }

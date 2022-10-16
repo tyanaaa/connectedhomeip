@@ -64,9 +64,7 @@ private:
     // ===== Members that implement the BLEManager internal interface.
 
     CHIP_ERROR _Init(void);
-    CHIP_ERROR _Shutdown() { return CHIP_NO_ERROR; }
-    CHIPoBLEServiceMode _GetCHIPoBLEServiceMode(void);
-    CHIP_ERROR _SetCHIPoBLEServiceMode(CHIPoBLEServiceMode val);
+    void _Shutdown() {}
     bool _IsAdvertisingEnabled(void);
     CHIP_ERROR _SetAdvertisingEnabled(bool val);
     bool _IsAdvertising(void);
@@ -121,7 +119,7 @@ private:
     enum
     {
         kMaxConnections      = BLE_LAYER_NUM_BLE_ENDPOINTS,
-        kMaxDeviceNameLength = 16,
+        kMaxDeviceNameLength = 32,
         kUnusedIndex         = 0xFF,
     };
 
@@ -167,6 +165,7 @@ private:
         BLE_E_FAIL,
         BLE_E_START_ADV_FAILED,
         BLE_INTERNAL_ERROR,
+        BLE_KW_MSG_2M_UPGRADE_ERROR,
     } ble_err_t;
 
     typedef struct ble_att_written_data_s
@@ -280,11 +279,6 @@ inline BLEManagerImpl & BLEMgrImpl(void)
 inline BleLayer * BLEManagerImpl::_GetBleLayer()
 {
     return this;
-}
-
-inline BLEManager::CHIPoBLEServiceMode BLEManagerImpl::_GetCHIPoBLEServiceMode(void)
-{
-    return mServiceMode;
 }
 
 } // namespace Internal

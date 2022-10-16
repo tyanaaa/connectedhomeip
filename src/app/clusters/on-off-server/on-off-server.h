@@ -29,8 +29,8 @@ using chip::app::Clusters::OnOff::OnOffFeature;
  * Defines and Macros
  *********************************************************/
 
-static constexpr uint8_t UPDATE_TIME_MS      = 100;
-static constexpr uint16_t TRANSITION_TIME_1S = 10;
+static constexpr chip::System::Clock::Milliseconds32 UPDATE_TIME_MS = chip::System::Clock::Milliseconds32(100);
+static constexpr uint16_t TRANSITION_TIME_1S                        = 10;
 
 static constexpr uint16_t MAX_TIME_VALUE = 0xFFFF;
 static constexpr uint8_t MIN_TIME_VALUE  = 1;
@@ -60,7 +60,7 @@ public:
                                const chip::app::Clusters::OnOff::Commands::OnWithTimedOff::DecodableType & commandData);
     void updateOnOffTimeCommand(chip::EndpointId endpoint);
     EmberAfStatus getOnOffValue(chip::EndpointId endpoint, bool * currentOnOffValue);
-    EmberAfStatus setOnOffValue(chip::EndpointId endpoint, uint8_t command, bool initiatedByLevelChange);
+    EmberAfStatus setOnOffValue(chip::EndpointId endpoint, chip::CommandId command, bool initiatedByLevelChange);
     EmberAfStatus getOnOffValueForStartUp(chip::EndpointId endpoint, bool & onOffValueForStartUp);
 
     bool HasFeature(chip::EndpointId endpoint, OnOffFeature feature);
@@ -80,12 +80,14 @@ private:
     EmberEventControl * getEventControl(chip::EndpointId endpoint);
     EmberEventControl * configureEventControl(chip::EndpointId endpoint);
 
+    uint32_t calculateNextWaitTimeMS(void);
     /**********************************************************
      * Attributes Declaration
      *********************************************************/
 
     static OnOffServer instance;
     EmberEventControl eventControls[EMBER_AF_ON_OFF_CLUSTER_SERVER_ENDPOINT_COUNT];
+    chip::System::Clock::Timestamp nextDesiredOnWithTimedOffTimestamp;
 };
 
 struct OnOffEffect

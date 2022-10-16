@@ -36,16 +36,16 @@ class CommissioningViewModel: ObservableObject {
                 { (result: Bool) -> () in
                     // commissioning complete handler code
                     self.Log.info("Commissioning status: \(result)")
-                    self.commisisoningComplete = result
+                    DispatchQueue.main.async {
+                        self.commisisoningComplete = result
+                    }
                 },
                 clientQueue: DispatchQueue.main,
                 commissioningWindowRequestedHandler: { (result: Bool) -> () in
                     self.commisisoningWindowOpened = result
                 })
         }
-        
-        // TBD: Get Onboarding payload
-        
+                
         // Send User directed commissioning request if a commissioner with a known IP addr was selected
         if(selectedCommissioner != nil && selectedCommissioner!.numIPs > 0)
         {
