@@ -525,6 +525,7 @@ JNI_METHOD(void, establishPaseConnectionByAddress)
     CHIP_ERROR err                           = CHIP_NO_ERROR;
     AndroidDeviceControllerWrapper * wrapper = AndroidDeviceControllerWrapper::FromJNIHandle(handle);
 
+<<<<<<< HEAD
     if (!chip::CanCastTo<uint32_t>(pinCode))
     {
         JniReferences::GetInstance().ThrowError(env, sChipDeviceControllerExceptionCls, CHIP_ERROR_INVALID_ARGUMENT);
@@ -537,6 +538,12 @@ JNI_METHOD(void, establishPaseConnectionByAddress)
         RendezvousParameters()
             .SetSetupPINCode(static_cast<uint32_t>(pinCode))
             .SetPeerAddress(Transport::PeerAddress::UDP(const_cast<char *>(addrJniString.c_str()), port));
+=======
+    JniUtfString addrJniString(env, address);
+
+    RendezvousParameters rendezvousParams = RendezvousParameters().SetSetupPINCode(pinCode).SetPeerAddress(
+        Transport::PeerAddress::UDP(const_cast<char *>(addrJniString.c_str()), port));
+>>>>>>> v1.0-branch
 
     err = wrapper->Controller()->EstablishPASEConnection(deviceId, rendezvousParams);
 

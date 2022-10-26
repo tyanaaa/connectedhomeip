@@ -124,7 +124,11 @@ efr32_sdk("sdk") {
   ]
 
   defines = [
+<<<<<<< HEAD
     "BOARD_ID=${silabs_board}",
+=======
+    "BOARD_ID=${efr32_board}",
+>>>>>>> v1.0-branch
     "OTA_PERIODIC_TIMEOUT=${OTA_periodic_query_timeout}",
   ]
 

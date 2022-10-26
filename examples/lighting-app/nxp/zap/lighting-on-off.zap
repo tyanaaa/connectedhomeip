@@ -235,7 +235,11 @@
           ],
           "attributes": [
             {
+<<<<<<< HEAD
               "name": "NameSupport",
+=======
+              "name": "name support",
+>>>>>>> v1.0-branch
               "code": 0,
               "mfgCode": null,
               "side": "server",
@@ -5808,7 +5812,11 @@
           ],
           "attributes": [
             {
+<<<<<<< HEAD
               "name": "NameSupport",
+=======
+              "name": "name support",
+>>>>>>> v1.0-branch
               "code": 0,
               "mfgCode": null,
               "side": "server",
@@ -9113,5 +9121,10 @@
       "endpointVersion": 1,
       "deviceIdentifier": 256
     }
+<<<<<<< HEAD
   ]
+=======
+  ],
+  "log": []
+>>>>>>> v1.0-branch
 }

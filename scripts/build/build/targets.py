@@ -408,6 +408,7 @@ def BuildQorvoTarget():
         TargetPart('qpg6105', board=QpgBoard.QPG6105),
     ])
 
+<<<<<<< HEAD
     # apps
     target.AppendFixedTargets([
         TargetPart('lock', app=QpgApp.LOCK),
@@ -415,6 +416,17 @@ def BuildQorvoTarget():
         TargetPart('shell', app=QpgApp.SHELL),
         TargetPart('persistent-storage', app=QpgApp.PERSISTENT_STORAGE),
     ])
+=======
+    yield target.Extend('light-ota-se', app=K32WApp.LIGHT, release=True, disable_ble=True, se05x=True).GlobBlacklist("Only on demand build")
+    yield target.Extend('light-release-no-ota', app=K32WApp.LIGHT, tokenizer=True, disable_ota=True, release=True, tinycrypt=True)
+    yield target.Extend('shell-release', app=K32WApp.SHELL, disable_logs=True, release=True)
+    yield target.Extend('lock-release', app=K32WApp.LOCK, release=True)
+    yield target.Extend('lock-low-power-release', app=K32WApp.LOCK,
+                        low_power=True, disable_logs=True, release=True).GlobBlacklist("Only on demand build")
+    yield target.Extend('contact-release', app=K32WApp.CONTACT, tokenizer=True, release=True, tinycrypt=True)
+    yield target.Extend('contact-low-power-release', app=K32WApp.CONTACT, tokenizer=True, tinycrypt=True,
+                        low_power=True, disable_logs=True, release=True).GlobBlacklist("Only on demand build")
+>>>>>>> v1.0-branch
 
     return target
 
@@ -474,6 +486,7 @@ def BuildBouffalolabTarget():
 def BuildIMXTarget():
     target = BuildTarget('imx', IMXBuilder)
 
+<<<<<<< HEAD
     target.AppendFixedTargets([
         TargetPart('chip-tool', app=IMXApp.CHIP_TOOL),
         TargetPart('lighting-app', app=IMXApp.LIGHT),
@@ -482,6 +495,11 @@ def BuildIMXTarget():
         TargetPart('all-clusters-minimal-app', app=IMXApp.ALL_CLUSTERS_MINIMAL),
         TargetPart('ota-provider-app', app=IMXApp.OTA_PROVIDER),
     ])
+=======
+    yield target.Extend('BL706-IoT-DVK-light', board=BouffalolabBoard.BL706_IoT_DVK, app=BouffalolabApp.LIGHT, enable_rpcs=False, module_type="BL706C-22")
+    yield target.Extend('BL706-IoT-DVK-light-rpc', board=BouffalolabBoard.BL706_IoT_DVK, app=BouffalolabApp.LIGHT, enable_rpcs=True, module_type="BL706C-22")
+    yield target.Extend('BL706-NIGHT-LIGHT-light', board=BouffalolabBoard.BL706_NIGHT_LIGHT, app=BouffalolabApp.LIGHT, enable_rpcs=False, module_type="BL702")
+>>>>>>> v1.0-branch
 
     target.AppendModifier('release', release=True)
 

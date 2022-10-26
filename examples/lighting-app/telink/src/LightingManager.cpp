@@ -22,9 +22,15 @@
 
 #include <lib/support/CodeUtils.h>
 
+<<<<<<< HEAD
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/zephyr.h>
+=======
+#include <drivers/pwm.h>
+#include <logging/log.h>
+#include <zephyr.h>
+>>>>>>> v1.0-branch
 
 LOG_MODULE_DECLARE(app);
 
