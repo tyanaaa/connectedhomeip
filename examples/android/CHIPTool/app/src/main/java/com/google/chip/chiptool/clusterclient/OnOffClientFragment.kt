@@ -30,6 +30,7 @@ import kotlinx.android.synthetic.main.on_off_client_fragment.view.onBtn
 import kotlinx.android.synthetic.main.on_off_client_fragment.view.readBtn
 import kotlinx.android.synthetic.main.on_off_client_fragment.view.showSubscribeDialogBtn
 import kotlinx.android.synthetic.main.on_off_client_fragment.view.toggleBtn
+import kotlinx.android.synthetic.main.on_off_client_fragment.view.onAudioBtn
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -57,6 +58,7 @@ class OnOffClientFragment : Fragment() {
       onBtn.setOnClickListener { scope.launch { sendOnCommandClick() } }
       offBtn.setOnClickListener { scope.launch { sendOffCommandClick() } }
       toggleBtn.setOnClickListener { scope.launch { sendToggleCommandClick() } }
+      onAudioBtn.setOnClickListener { scope.launch { sendOnAudioCommandClick() } }
       readBtn.setOnClickListener { scope.launch { sendReadOnOffClick() } }
       showSubscribeDialogBtn.setOnClickListener { showSubscribeDialog() }
 
@@ -220,6 +222,20 @@ class OnOffClientFragment : Fragment() {
     })
   }
 
+  private suspend fun sendOnAudioCommandClick() {
+    getOnOffClusterForDevice().onAudio(object : ChipClusters.DefaultClusterCallback {
+      override fun onSuccess() {
+        showMessage("ONAUDIO command success")
+      }
+
+      override fun onError(ex: Exception) {
+        showMessage("ONAUDIO command failure $ex")
+        Log.e(TAG, "ONAUDIO command failure", ex)
+      }
+
+    })
+  }
+  
   private suspend fun getOnOffClusterForDevice(): OnOffCluster {
     return OnOffCluster(
       ChipClient.getConnectedDevicePointer(requireContext(), addressUpdateFragment.deviceId),

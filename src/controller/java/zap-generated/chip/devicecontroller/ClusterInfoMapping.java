@@ -7914,6 +7914,16 @@ public class ClusterInfoMapping {
             () -> new DelegatedDefaultClusterCallback(),
             onOffonCommandParams);
     onOffClusterInteractionInfoMap.put("on", onOffonInteractionInfo);
+    Map<String, CommandParameterInfo> onOffonAudioCommandParams =
+        new LinkedHashMap<String, CommandParameterInfo>();
+    InteractionInfo onOffonAudioInteractionInfo =
+        new InteractionInfo(
+            (cluster, callback, commandArguments) -> {
+              ((ChipClusters.OnOffCluster) cluster).onAudio((DefaultClusterCallback) callback);
+            },
+            () -> new DelegatedDefaultClusterCallback(),
+            onOffonAudioCommandParams);
+    onOffClusterInteractionInfoMap.put("onAudio", onOffonAudioInteractionInfo);
     Map<String, CommandParameterInfo> onOfftoggleCommandParams =
         new LinkedHashMap<String, CommandParameterInfo>();
     InteractionInfo onOfftoggleInteractionInfo =

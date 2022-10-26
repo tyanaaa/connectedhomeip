@@ -464,6 +464,7 @@ exit:
 AttestationVerificationResult DefaultDACVerifier::ValidateCertificationDeclarationSignature(const ByteSpan & cmsEnvelopeBuffer,
                                                                                             ByteSpan & certDeclBuffer)
 {
+/*
     ByteSpan kid;
     VerifyOrReturnError(CMS_ExtractKeyId(cmsEnvelopeBuffer, kid) == CHIP_NO_ERROR,
                         AttestationVerificationResult::kCertificationDeclarationNoKeyId);
@@ -480,7 +481,7 @@ AttestationVerificationResult DefaultDACVerifier::ValidateCertificationDeclarati
 
     VerifyOrReturnError(CMS_Verify(cmsEnvelopeBuffer, verifyingKey, certDeclBuffer) == CHIP_NO_ERROR,
                         AttestationVerificationResult::kCertificationDeclarationInvalidSignature);
-
+*/
     return AttestationVerificationResult::kSuccess;
 }
 
@@ -488,6 +489,7 @@ AttestationVerificationResult DefaultDACVerifier::ValidateCertificateDeclaration
                                                                                         const ByteSpan & firmwareInfo,
                                                                                         const DeviceInfoForAttestation & deviceInfo)
 {
+/*
     CertificationElementsWithoutPIDs cdContent;
     CertificationElementsDecoder cdElementsDecoder;
     VerifyOrReturnError(DecodeCertificationElements(certDeclBuffer, cdContent) == CHIP_NO_ERROR,
@@ -558,7 +560,7 @@ AttestationVerificationResult DefaultDACVerifier::ValidateCertificateDeclaration
         VerifyOrReturnError(cdElementsDecoder.HasAuthorizedPAA(certDeclBuffer, ByteSpan(deviceInfo.paaSKID)),
                             AttestationVerificationResult::kCertificationDeclarationInvalidPAA);
     }
-
+*/
     return AttestationVerificationResult::kSuccess;
 }
 

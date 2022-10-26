@@ -42,6 +42,7 @@
     <string name="wifi_scan_btn_text">Wi-Fi Scan</string>
 
     <string name="send_command_on_btn_text">On</string>
+    <string name="send_command_onAudio_btn_text">OnAudio</string>
     <string name="send_command_off_btn_text">Off</string>
     <string name="send_command_toggle_btn_text">Toggle</string>
     <string name="read_on_off_attribute_btn_text">Read</string>

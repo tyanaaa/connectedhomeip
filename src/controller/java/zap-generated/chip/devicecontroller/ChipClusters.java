@@ -1029,6 +1029,15 @@ public class ChipClusters {
       on(chipClusterPtr, callback, timedInvokeTimeoutMs);
     }
 
+    public void onAudio(DefaultClusterCallback callback) {
+      onAudio(chipClusterPtr, callback, null);
+    }
+
+    public void onAudio(DefaultClusterCallback callback, int timedInvokeTimeoutMs) {
+
+      onAudio(chipClusterPtr, callback, timedInvokeTimeoutMs);
+    }
+    
     public void toggle(DefaultClusterCallback callback) {
       toggle(chipClusterPtr, callback, null);
     }
@@ -1084,6 +1093,11 @@ public class ChipClusters {
         @Nullable Integer timedInvokeTimeoutMs);
 
     private native void on(
+        long chipClusterPtr,
+        DefaultClusterCallback Callback,
+        @Nullable Integer timedInvokeTimeoutMs);
+        
+   private native void onAudio(
         long chipClusterPtr,
         DefaultClusterCallback Callback,
         @Nullable Integer timedInvokeTimeoutMs);
