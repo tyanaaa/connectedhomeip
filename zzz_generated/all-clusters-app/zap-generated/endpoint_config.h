@@ -1726,6 +1726,7 @@
   0x00000040 /* OffWithEffect */, \
   0x00000041 /* OnWithRecallGlobalScene */, \
   0x00000042 /* OnWithTimedOff */, \
+  0x00000043 /* OnAudio */, \
   chip::kInvalidCommandId /* end of list */, \
   /* Endpoint: 1, Cluster: Level Control (server) */\
   /*   AcceptedCommandList (index=116) */ \
