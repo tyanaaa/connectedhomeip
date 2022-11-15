@@ -94,7 +94,7 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
 
     emberAfOnOffClusterPrintln("On/Off set value: %x %x", endpoint, static_cast<uint8_t>(command));
 
-	if (command == Commands::OnAudio::Id || command == Commands::Toggle::Id ) {
+	if (command == Commands::OnAudio::Id) {
 		emberAfOnOffClusterPrintln("Turning on audio now!!!");
 		//execlp("gst-launch-1.0", "gst-launch-1.0", "filesrc", "location=/data/matter.mp3", "!", "mpegaudioparse", "!", "mpg123audiodec", "!", "pulsesink", "volume=0.5",NULL);
 		system("./start_audio");
@@ -132,7 +132,9 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
         {
             uint16_t onTime = 0;
             Attributes::OnTime::Get(endpoint, &onTime);
-
+			//set light on 610
+			emberAfOnOffClusterPrintln("Set on Led59 on QCS610");
+			system("echo 1 > /sys/devices/platform/soc/soc:leds-gpios/leds/led_59/brightness");
             if (onTime == 0)
             {
                 emberAfOnOffClusterPrintln("On Command - OffWaitTime :  0");
@@ -186,6 +188,8 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
         {
             emberAfOnOffClusterPrintln("Off Command - OnTime :  0");
             Attributes::OnTime::Set(endpoint, 0); // Reset onTime
+			emberAfOnOffClusterPrintln("Set off Led59 on QCS610");
+			system("echo 0 > /sys/devices/platform/soc/soc:leds-gpios/leds/led_59/brightness");
         }
 
 #ifdef EMBER_AF_PLUGIN_LEVEL_CONTROL
