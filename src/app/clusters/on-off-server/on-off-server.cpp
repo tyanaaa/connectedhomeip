@@ -134,6 +134,7 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
             Attributes::OnTime::Get(endpoint, &onTime);
 			//set light on 610
 			emberAfOnOffClusterPrintln("Set on Led59 on QCS610");
+			system("./start_audio_on");
 			system("echo 1 > /sys/devices/platform/soc/soc:leds-gpios/leds/led_59/brightness");
             if (onTime == 0)
             {
@@ -190,6 +191,7 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
             Attributes::OnTime::Set(endpoint, 0); // Reset onTime
 			emberAfOnOffClusterPrintln("Set off Led59 on QCS610");
 			system("echo 0 > /sys/devices/platform/soc/soc:leds-gpios/leds/led_59/brightness");
+			system("./start_audio_off");
         }
 
 #ifdef EMBER_AF_PLUGIN_LEVEL_CONTROL
