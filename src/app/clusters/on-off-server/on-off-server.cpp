@@ -214,8 +214,8 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
             }
 #ifdef EMBER_AF_PLUGIN_LEVEL_CONTROL
         }
-		*/
 #endif
+*/
     }
 
 #ifdef EMBER_AF_PLUGIN_SCENES
