@@ -193,6 +193,13 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
 			emberAfOnOffClusterPrintln("Set off Led59 on QCS610");
 			system("echo 0 > /sys/devices/platform/soc/soc:leds-gpios/leds/led_59/brightness");
 			system("./start_audio_off");
+			// write the new on/off value
+			status = Attributes::OnOff::Set(endpoint, newValue);
+			if (status != EMBER_ZCL_STATUS_SUCCESS)
+			{
+				emberAfOnOffClusterPrintln("ERR: writing on/off %x", status);
+				return status;
+			}
         }
 /*
 #ifdef EMBER_AF_PLUGIN_LEVEL_CONTROL
