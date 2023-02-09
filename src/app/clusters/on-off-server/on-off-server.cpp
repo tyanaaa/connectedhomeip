@@ -160,7 +160,7 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
             emberAfOnOffClusterPrintln("ERR: writing on/off %x", status);
             return status;
         }
-
+/*
 #ifdef EMBER_AF_PLUGIN_LEVEL_CONTROL
         // If initiatedByLevelChange is false, then we assume that the level change
         // ZCL stuff has not happened and we do it here
@@ -169,6 +169,7 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
             emberAfOnOffClusterLevelControlEffectCallback(endpoint, newValue);
         }
 #endif
+*/
 #ifdef EMBER_AF_PLUGIN_MODE_SELECT
         // If OnMode is not a null value, then change the current mode to it.
         if (emberAfContainsServer(endpoint, ModeSelect::Id) &&
@@ -193,7 +194,7 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
 			system("echo 0 > /sys/devices/platform/soc/soc:leds-gpios/leds/led_59/brightness");
 			system("./start_audio_off");
         }
-
+/*
 #ifdef EMBER_AF_PLUGIN_LEVEL_CONTROL
         // If initiatedByLevelChange is false, then we assume that the level change
         // ZCL stuff has not happened and we do it here
@@ -213,6 +214,7 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
             }
 #ifdef EMBER_AF_PLUGIN_LEVEL_CONTROL
         }
+		*/
 #endif
     }
 

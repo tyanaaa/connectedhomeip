@@ -337,14 +337,12 @@ static void writeRemainingTime(EndpointId endpoint, uint16_t remainingTimeMs)
 
 static void setOnOffValue(EndpointId endpoint, bool onOff)
 {
-#ifdef EMBER_AF_PLUGIN_ON_OFF
-	/*
+#ifdef EMBER_AF_PLUGIN_ON_OFF	
     if (emberAfContainsServer(endpoint, OnOff::Id))
     {
         emberAfLevelControlClusterPrintln("Setting on/off to %p due to level change", onOff ? "ON" : "OFF");
         OnOffServer::Instance().setOnOffValue(endpoint, (onOff ? OnOff::Commands::On::Id : OnOff::Commands::Off::Id), true);
     }
-	*/
 #endif // EMBER_AF_PLUGIN_ON_OFF
 }
 
